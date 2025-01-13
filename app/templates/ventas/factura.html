@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura de Venta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 90%;
+            margin: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        .header h2 {
+            margin: 0;
+        }
+
+        .detalles-venta {
+            margin-bottom: 30px;
+        }
+
+        .detalles-venta p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+        }
+
+        .totales {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .abonos {
+            margin-top: 40px;
+        }
+
+        .footer {
+            text-align: right;
+            margin-top: 50px;
+            font-size: 12px;
+            color: gray;
+        }
+
+        .footer img {
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        .footer span {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Encabezado -->
+        <div class="header">
+            {% if negocio %}
+            <div class="text-center mb-4">
+                <h2>{{ negocio.nombre }}</h2>
+                <p>NIT: {{ negocio.nit }}</p>
+                <p>{{ negocio.direccion }}</p>
+                <p>Tel: {{ negocio.telefono }}</p>
+                {% if negocio.email %}
+                <p>Email: {{ negocio.email }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            <h3 class="text-center">Factura de Venta</h3>
+        </div>
+
+        <!-- Detalles de la venta -->
+        <div class="detalles-venta">
+            <p><strong>ID Factura:</strong> {{ venta.id_venta }}</p>
+            <p><strong>Fecha:</strong> {{ venta.fecha_venta }}</p>
+            <p><strong>Cliente:</strong> {{ venta.cliente }}</p>
+            <p><strong>Vendedor:</strong> {{ venta.usuario }}</p>
+        </div>
+
+        <!-- Tabla de productos -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in venta.detalles %}
+                <tr>
+                    <td>{{ detalle.producto }}</td>
+                    <td>{{ detalle.cantidad }}</td>
+                    <td>${{ detalle.precio }}</td>
+                    <td>${{ detalle.subtotal }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Tabla de abonos -->
+        <div class="abonos">
+            <h3>Abonos</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for abono in venta.abonos %}
+                    <tr>
+                        <td>{{ abono.fecha_abono }}</td>
+                        <td>${{ abono.monto }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totales -->
+        <div class="totales">
+            <h2><strong>Total Venta:</strong> ${{ venta.total_venta }}</h2>
+            <h2><strong>Saldo Pendiente:</strong> ${{ venta.saldo }}</h2>
+        </div>
+
+        <!-- Footer con logo y nombre de la empresa -->
+        <div class="footer">
+            <img src="{{ request.url_root }}static/img/logo_ciare.png" alt="Logo">
+            <span>COUNTAPP - Ciare Company</span>
+        </div>
+    </div>
+</body>
+</html>

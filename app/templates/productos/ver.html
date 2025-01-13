@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de venta{% endblock %}
+
+{% block content %}
+<body>
+    <h1>Detalles del Producto</h1>
+    <p>ID: {{ producto.id }}</p>
+    <p>Nombre: {{ producto.nombre }}</p>
+    <p>Stock: {{ producto.cantidad }}</p>
+    <p>Producto: {{ producto.precio_compra }}</p>
+    <p>Precio: {{ producto.precio }}</p>
+    <a href="{{ url_for('producto.listar_productos') }}">Volver</a>
+</body>
+{% endblock %}
+
+
+  

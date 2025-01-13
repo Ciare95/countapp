@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Listado de Clientes{% endblock %}
+
+{% block content %}
+<body>
+    <div class="container py-3">
+        <h1 class="text-center mb-4">Listado de Clientes</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container mt-3 flash-message">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        
+        <!-- Botón Crear Cliente -->
+        <div class="mb-3">
+            <button id="btn-crear" class="btn btn-success btn-sm">Crear Cliente</button>
+        </div>
+
+        <!-- Tabla de Clientes -->
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Documento</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                <tr>
+                    <td>{{ cliente.nombre }}</td>
+                    <td>{{ cliente.apellido }}</td>
+                    <td>{{ cliente.documento }}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm btn-editar" 
+                                data-id="{{ cliente.id }}" 
+                                data-nombre="{{ cliente.nombre }}" 
+                                data-apellido="{{ cliente.apellido }}" 
+                                data-documento="{{ cliente.documento }}">
+                            Editar
+                        </button>
+                        <form action="{{ url_for('cliente.eliminar_cliente', id=cliente.id) }}" 
+                              method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirmarEliminacion()">Eliminar</button>
+                        </form>
+                        <a href="{{ url_for('historiales.historial_cliente', cliente_id=cliente.id) }}" 
+                           class="btn btn-primary btn-sm">Ver Facturas</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal Crear Cliente -->
+    <div id="modal-crear" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-crear">&times;</span>
+            <h2>Crear Cliente</h2>
+            <form method="POST" action="{{ url_for('cliente.crear_cliente') }}">
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" name="nombre" id="crear-nombre" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="apellido" class="form-label">Apellido</label>
+                    <input type="text" name="apellido" id="crear-apellido" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="documento" class="form-label">Documento</label>
+                    <input type="text" name="documento" id="crear-documento" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success">Crear Cliente</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Cliente -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-editar">&times;</span>
+            <h2>Editar Cliente</h2>
+            <form method="POST" action="" id="editar-form">
+                <input type="hidden" name="id" id="editar-id">
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" name="nombre" id="editar-nombre" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="apellido" class="form-label">Apellido</label>
+                    <input type="text" name="apellido" id="editar-apellido" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="documento" class="form-label">Documento</label>
+                    <input type="text" name="documento" id="editar-documento" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-warning">Actualizar Cliente</button>
+            </form>            
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const modalCrear = document.getElementById("modal-crear");
+            const modalEditar = document.getElementById("modal-editar");
+            const btnCrear = document.getElementById("btn-crear");
+            const closeCrear = document.getElementById("close-crear");
+            const closeEditar = document.getElementById("close-editar");
+            const btnsEditar = document.querySelectorAll(".btn-editar");
+
+            btnCrear.addEventListener("click", () => {
+                modalCrear.style.display = "flex";
+            });
+
+            closeCrear.addEventListener("click", () => {
+                modalCrear.style.display = "none";
+            });
+
+            closeEditar.addEventListener("click", () => {
+                modalEditar.style.display = "none";
+            });
+
+            btnsEditar.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = btn.dataset.id;
+                    const nombre = btn.dataset.nombre;
+                    const apellido = btn.dataset.apellido;
+                    const documento = btn.dataset.documento;
+
+                    document.getElementById("editar-id").value = id;
+                    document.getElementById("editar-nombre").value = nombre;
+                    document.getElementById("editar-apellido").value = apellido;
+                    document.getElementById("editar-documento").value = documento;
+
+                    document.getElementById("editar-form").action = `/clientes/editar/${id}`;
+                    modalEditar.style.display = "flex";
+                });
+            });
+
+            window.addEventListener("click", (e) => {
+                if (e.target === modalCrear) modalCrear.style.display = "none";
+                if (e.target === modalEditar) modalEditar.style.display = "none";
+            });
+        });
+
+        function confirmarEliminacion() {
+            return confirm('¿Estás seguro de que deseas eliminar este cliente?');
+        }
+        // Seleccionar todos los mensajes flash
+        const flashMessages = document.querySelectorAll('.flash-message');
+        // Configurar un temporizador para cada mensaje
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                // Usar fade-out para una transición suave
+                message.classList.remove('show');
+                message.classList.add('fade');
+                setTimeout(() => message.remove(), 300); // Remover después de la transición
+            }, 3000); // 3 segundos
+        });
+    </script>
+</body>
+{% endblock %}

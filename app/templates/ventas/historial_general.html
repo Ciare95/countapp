@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Historial General{% endblock %}
+
+{% block content %}
+<body>
+    <div class="container my-5">
+        <div class="container-fluid py-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="mb-0">Historial General de Ventas</h2>
+                <form class="d-flex gap-2" method="GET" action="/historial/historial_general">
+                    <input type="date" name="fecha" id="fecha" class="form-control form-control-sm" value="{{ fecha }}" placeholder="Fecha">
+                    <input type="month" name="mes" id="mes" class="form-control form-control-sm" value="{{ mes }}" placeholder="Mes">
+                    <input type="number" name="anio" id="anio" class="form-control form-control-sm" value="{{ anio }}" min="2000" max="2100" placeholder="Año">
+                    <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                    <a href="/historial/historial_general" class="btn btn-secondary btn-sm">Hoy</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="container-fluid mb-3">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-around">
+                                <div class="text-center">
+                                    <h5 class="mb-0">TOTAL FACTURADO</h5>
+                                    <span class="fs-4">${{ totales.total_ventas }}</span>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="mb-0">CARTERA</h5>
+                                    <span class="fs-4">${{ totales.total_saldos }}</span>
+                                </div>
+                                <div class="text-center">
+                                    <h5 class="mb-0">VENTAS NETAS</h5>
+                                    <span class="fs-4">${{ totales.total_neto }}</span>  
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID Factura</th>
+                        <th>Fecha</th>
+                        <th>usuario</th>
+                        <th>Cliente</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Saldo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="ventas-historial">
+                    {% for venta in ventas %}
+                    <tr>
+                        <td>{{ venta.id_venta }}</td>
+                        <td>{{ venta.fecha_venta if venta.fecha_venta != 'Fecha no disponible' else 'No disponible' }}</td>
+                        <td>{{ venta.usuario }}</td>
+                        <td>{{ venta.cliente }}</td>
+                        <td>${{ venta.total_venta }}</td>
+                        <td>{{ venta.estado }}</td>
+                        <td>${{ venta.saldo }}</td>
+                        <td>
+                            <a href="/ventas/ver/{{ venta.id_venta }}" 
+                               class="btn btn-info btn-sm">Ver detalles</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+       
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
+

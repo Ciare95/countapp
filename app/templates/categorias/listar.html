@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías{% endblock %}
+
+{% block content %}
+<body>
+    <div class="container py-3">
+        <h1 class="text-center mb-4">Lista de Categorías</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container mt-3 flash-message">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+
+        <!-- Botón para Crear Categoría -->
+        <button id="btn-crear" class="btn btn-success btn-sm mb-3">Nueva Categoría</button>
+
+        <!-- Tabla de Categorías -->
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for categoria in categorias %}
+                <tr>
+                    <td>{{ categoria.nombre }}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm btn-editar" 
+                            data-id="{{ categoria.id }}" 
+                            data-nombre="{{ categoria.nombre }}">
+                            Editar
+                        </button>
+                        <form action="{{ url_for('categoria.eliminar_categoria', id=categoria.id) }}" 
+                              method="POST" 
+                              style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" 
+                                    onclick="return confirmarEliminacion()">Eliminar</button>
+                        </form>
+                        <a href="{{ url_for('categoria.ver_productos_categoria', id=categoria.id) }}" 
+                           class="btn btn-secondary btn-sm">Ver Productos</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- Modal Crear Categoría -->
+    <div id="modal-crear" class="modal">
+        <div class="modal-content p-4 rounded shadow bg-white" style="max-width: 500px;">
+            <span class="close" id="close-crear">&times;</span>
+            <h2>Nueva Categoría</h2>
+            <form action="{{ url_for('categoria.crear_categoria') }}" method="POST">
+                <label for="nombre">Nombre</label>
+                <input type="text" name="nombre" id="crear-nombre" class="form-control form-control-sm mb-3" required>
+                <button type="submit" class="btn btn-success btn-sm">Crear</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Categoría -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-content p-4 rounded shadow bg-white" style="max-width: 500px;">
+            <span class="close" id="close-editar">&times;</span>
+            <h2>Editar Categoría</h2>
+            <form action="{{ url_for('categoria.editar_categoria', id=0) }}" method="POST" id="editar-form">
+                <input type="hidden" name="id" id="editar-id">
+                <label for="nombre">Nombre</label>
+                <input type="text" name="nombre" id="editar-nombre" class="form-control form-control-sm mb-3" required>
+                <button type="submit" class="btn btn-primary btn-sm">Actualizar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const modalCrear = document.getElementById("modal-crear");
+            const modalEditar = document.getElementById("modal-editar");
+            const btnCrear = document.getElementById("btn-crear");
+            const closeCrear = document.getElementById("close-crear");
+            const closeEditar = document.getElementById("close-editar");
+            const btnsEditar = document.querySelectorAll(".btn-editar");
+
+            btnCrear.addEventListener("click", () => {
+                modalCrear.style.display = "flex";
+            });
+
+            closeCrear.addEventListener("click", () => {
+                modalCrear.style.display = "none";
+            });
+
+            closeEditar.addEventListener("click", () => {
+                modalEditar.style.display = "none";
+            });
+
+            btnsEditar.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const id = btn.dataset.id;
+                    const nombre = btn.dataset.nombre;
+
+                    document.getElementById("editar-form").action = `{{ url_for('categoria.editar_categoria', id=0) }}`.replace('/0', `/${id}`);
+                    document.getElementById("editar-id").value = id;
+                    document.getElementById("editar-nombre").value = nombre;
+
+                    modalEditar.style.display = "flex";
+                });
+            });
+
+            window.addEventListener("click", (e) => {
+                if (e.target === modalCrear) modalCrear.style.display = "none";
+                if (e.target === modalEditar) modalEditar.style.display = "none";
+            });
+        });
+
+        function confirmarEliminacion() {
+            return confirm('¿Estás seguro de que deseas eliminar esta categoría?');
+        }
+        // Seleccionar todos los mensajes flash
+        const flashMessages = document.querySelectorAll('.flash-message');
+        // Configurar un temporizador para cada mensaje
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                // Usar fade-out para una transición suave
+                message.classList.remove('show');
+                message.classList.add('fade');
+                setTimeout(() => message.remove(), 300); // Remover después de la transición
+            }, 3000); // 3 segundos
+        });
+    </script>
+</body>
+{% endblock %}

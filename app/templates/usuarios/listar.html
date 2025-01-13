@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<body>
+    <div class="container py-3">
+        <h1 class="text-center mb-4">Lista de Usuarios</h1>
+
+        <!-- Bloque para mostrar mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div>
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show flash-message" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        
+        <div class="mb-3">
+            <button id="btn-crear" class="btn btn-success btn-sm">Crear Usuario</button>
+            <button id="btn-mi-negocio" class="btn btn-primary btn-sm" onclick="window.location.href='/negocios/listar'">Mi Negocio</button>
+        </div>
+        
+        <!-- Tabla de Usuarios -->
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios %}
+                <tr>
+                    <td>{{ usuario.nombre }}</td>
+                    <td>{{ 'Administrador' if usuario.rol == 1 else 'Usuario' }}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm btn-editar"
+                            data-id="{{ usuario.id }}"
+                            data-nombre="{{ usuario.nombre }}"
+                            data-rol="{{ usuario.rol }}">
+                            Editar
+                        </button>
+                        <form action="{{ url_for('usuario.eliminar_usuario', id=usuario.id) }}" 
+                              method="POST" 
+                              style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" 
+                                    onclick="return confirmarEliminacion()">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <a href="/" class="btn btn-secondary btn-sm">Volver</a>
+    </div>
+
+    <!-- Modal Crear Usuario -->
+    <div id="modal-crear" class="modal">
+        <div class="modal-content p-4 rounded shadow bg-white" style="max-width: 500px;">
+            <span class="close" id="close-crear">&times;</span>
+            <h2>Crear Usuario</h2>
+            <form action="{{ url_for('usuario.crear_usuario') }}" method="POST">
+                <label for="nombre">Nombre</label>
+                <input type="text" name="nombre" id="crear-nombre" class="form-control form-control-sm mb-2" required>
+
+                <label for="rol">Rol</label>
+                <select name="rol" id="crear-rol" class="form-control form-control-sm mb-2" required>
+                    <option value="1">Administrador</option>
+                    <option value="2">Usuario</option>
+                </select>
+
+                <label for="password">Contraseña</label>
+                <input type="password" name="password" id="crear-password" class="form-control form-control-sm mb-3" autocomplete="new-password">
+
+                <button type="submit" class="btn btn-success btn-sm">Crear Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Usuario -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-content p-4 rounded shadow bg-white" style="max-width: 500px;">
+            <span class="close" id="close-editar">&times;</span>
+            <h2>Editar Usuario</h2>
+            <form action="{{ url_for('usuario.editar_usuario', id=0) }}" method="POST" id="editar-form">
+                <label for="nombre">Nombre</label>
+                <input type="text" name="nombre" id="editar-nombre" class="form-control form-control-sm mb-2" required>
+
+                <label for="rol">Rol</label>
+                <select name="rol" id="editar-rol" class="form-control form-control-sm mb-2" required>
+                    <option value="1">Administrador</option>
+                    <option value="2">Usuario</option>
+                </select>
+
+                <label for="password">Contraseña</label>
+                <input type="password" name="password" id="editar-password" class="form-control form-control-sm mb-3" autocomplete="current-password">
+
+                <button type="submit" class="btn btn-primary btn-sm">Actualizar Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const modalCrear = document.getElementById("modal-crear");
+            const modalEditar = document.getElementById("modal-editar");
+            const btnCrear = document.getElementById("btn-crear");
+            const closeCrear = document.getElementById("close-crear");
+            const closeEditar = document.getElementById("close-editar");
+            const btnsEditar = document.querySelectorAll(".btn-editar");
+
+            btnCrear.addEventListener("click", () => {
+                modalCrear.style.display = "flex";
+            });
+
+            closeCrear.addEventListener("click", () => {
+                modalCrear.style.display = "none";
+            });
+
+            closeEditar.addEventListener("click", () => {
+                modalEditar.style.display = "none";
+            });
+
+            btnsEditar.forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const id = btn.dataset.id;
+                    const nombre = btn.dataset.nombre;
+                    const rol = btn.dataset.rol;
+
+                    document.getElementById("editar-form").action = `{{ url_for('usuario.editar_usuario', id=0) }}`.replace('/0', `/${id}`);
+                    document.getElementById("editar-nombre").value = nombre;
+                    document.getElementById("editar-rol").value = rol;
+
+                    modalEditar.style.display = "flex";
+                });
+            });
+
+            window.addEventListener("click", (e) => {
+                if (e.target === modalCrear) modalCrear.style.display = "none";
+                if (e.target === modalEditar) modalEditar.style.display = "none";
+            });
+        });
+
+        function confirmarEliminacion() {
+            return confirm('¿Estás seguro de que deseas eliminar este usuario?');
+        }
+        // Seleccionar todos los mensajes flash
+        const flashMessages = document.querySelectorAll('.flash-message');
+        // Configurar un temporizador para cada mensaje
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                // Usar fade-out para una transición suave
+                message.classList.remove('show');
+                message.classList.add('fade');
+                setTimeout(() => message.remove(), 300); // Remover después de la transición
+            }, 3000); // 3 segundos
+        });
+    </script>
+</body>
+{% endblock %}

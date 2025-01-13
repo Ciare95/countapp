@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Informe de Ingresos y Egresos{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="container-fluid py-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Informe de Ingresos y Egresos</h2>
+            <form class="d-flex gap-2" method="GET" action="/informes/ingresos_egresos">
+                <input type="date" name="fecha" id="fecha" class="form-control form-control-sm" value="{{ fecha }}" placeholder="Fecha">
+                <input type="month" name="mes" id="mes" class="form-control form-control-sm" value="{{ mes }}" placeholder="Mes">
+                <input type="number" name="anio" id="anio" class="form-control form-control-sm" value="{{ anio }}" min="2000" max="2100" placeholder="Año">
+                <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                <a href="/informes/ingresos_egresos" class="btn btn-secondary btn-sm">Hoy</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="container-fluid mb-3">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-around">
+                            <div class="text-center">
+                                <h5 class="mb-0">Total Ingresos</h5>
+                                <span class="fs-4">${{ total_ingresos }}</span>
+                            </div>
+                            <div class="text-center">
+                                <h5 class="mb-0">Total Egresos</h5>
+                                <span class="fs-4">${{ total_egresos }}</span>
+                            </div>
+                            <div class="text-center">
+                                <h5 class="mb-0">Ganancia Neta</h5>
+                                <span class="fs-4">${{ ganancia_neta }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

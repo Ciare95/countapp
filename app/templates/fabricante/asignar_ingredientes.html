@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center">Asignar Ingredientes</h1>
+    <h4 class="text-center">Producto: {{ producto.nombre }}</h4>
+    <h5 class="text-center">Cantidad producida: {{ producto.cantidad_producida }} {{ producto.unidad_medida }}</h5>
+    
+    <form id="ingredientesForm" action="{{ url_for('fabricante_ingredientes.guardar_ingredientes') }}" method="POST">
+        <!-- Campo hidden para enviar el ID al backend -->
+        <input type="hidden" name="producto_id" value="{{ producto.id }}">
+        <!-- Campo hidden para acceso en JavaScript -->
+        <input type="hidden" id="producto-id" value="{{ producto.id }}">
+    
+        
+        <div class="row align-items-end g-3">
+            <div class="col-md-6">
+                <label for="ingrediente_buscar" class="form-label">Buscar Ingrediente</label>
+                <input type="text" id="ingrediente_buscar" class="form-control form-control-sm" 
+                       placeholder="Buscar por nombre" oninput="buscarIngrediente(this.value)">
+                <ul id="ingrediente_results" class="list-group position-absolute" style="display: none; z-index: 1000;"></ul>
+            </div>
+        </div>
+    
+        <div class="p-3 mt-3">
+            <h3>Ingredientes Asignados</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ingrediente</th>
+                        <th>Costo Factura</th>
+                        <th>Medida Factura</th>
+                        <th>Cantidad Ing</th>
+                        <th>Unidad de Medida</th>
+                        <th>Costo Ing por Producto</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="ingredientes-tabla">
+                    <!-- Los ingredientes se insertarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h4>Costo Total: <span id="costoTotal">$0.00</span></h4>
+            </div>
+            <div class="col-md-6 text-end">
+                <button type="submit" class="btn btn-success" id="guardarBtn">Guardar Asignación</button>
+            </div>
+    </form>
+    
+</div>
+
+<script>
+    function guardarIngredientes(event) {
+        event.preventDefault(); // Prevent regular form submission
+        
+        const productoId = document.getElementById('producto-id')?.value; // Note: Changed to match your HTML ID
+        if (!productoId) {
+            alert('Error: ID del producto no encontrado');
+            return;
+        }
+
+        const filas = document.querySelectorAll('#ingredientes-tabla tr[data-id]');
+        if (filas.length === 0) {
+            alert('Error: No hay ingredientes para guardar');
+            return;
+        }
+
+        const ingredientes = [];
+        let hasErrors = false;
+
+        filas.forEach(fila => {
+            try {
+                const ingredienteId = fila.getAttribute('data-id');
+                const costoFactura = fila.querySelector('input[placeholder="Costo Factura"]')?.value;
+                const costoIngPorProducto = fila.querySelector('input[placeholder="Costo Ing por Producto"]')?.value;
+                const unidadMedida = fila.querySelector('td:nth-child(5) select')?.value;
+                const cantidadIng = fila.querySelector('input[placeholder="Cantidad Ing"]')?.value;
+                const cantidadFactura = fila.querySelector('td:nth-child(3) select')?.value;
+
+                if (!ingredienteId || !unidadMedida || !cantidadFactura) {
+                    throw new Error(`Datos incompletos en el ingrediente ${fila.getAttribute('data-nombre') || 'desconocido'}`);
+                }
+
+                ingredientes.push({
+                    id: parseInt(ingredienteId),
+                    costo_factura: parseFloat(costoFactura) || 0,
+                    costo_ing_por_producto: parseFloat(costoIngPorProducto) || 0,
+                    unidad_medida: unidadMedida,
+                    cantidad_ing: parseFloat(cantidadIng) || 0,
+                    cantidad_factura: cantidadFactura
+                });
+            } catch (error) {
+                console.error('Error procesando fila:', error);
+                alert(error.message);
+                hasErrors = true;
+                return false;
+            }
+        });
+
+        if (hasErrors) return;
+
+        const saveButton = document.getElementById('guardarBtn');
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.textContent = 'Guardando...';
+        }
+
+        fetch('/fabricante_ingredientes/guardar_ingredientes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                producto_id: productoId,
+                ingredientes: ingredientes
+            }),
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al guardar los ingredientes');
+        })
+        .finally(() => {
+            if (saveButton) {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Guardar Asignación';
+            }
+        });
+    }   
+
+    // Update your form's onsubmit handler
+    document.getElementById('ingredientesForm').onsubmit = guardarIngredientes;
+
+    
+
+    function buscarIngrediente(termino) {
+        const listaResultados = document.getElementById('ingrediente_results');
+        
+        if (!termino) {
+            listaResultados.style.display = 'none';
+            listaResultados.innerHTML = '';
+            return;
+        }
+
+        fetch(`/fabricante_utilidades/buscar_ingrediente?q=${encodeURIComponent(termino)}`)
+            .then(response => response.json())
+            .then(data => {
+                listaResultados.innerHTML = ''; // Limpiar resultados previos
+                
+                if (data.length > 0) {
+                    data.forEach(ingrediente => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = ingrediente.nombre;
+                        li.setAttribute('data-id', ingrediente.id); // ID del ingrediente
+                        li.setAttribute('data-nombre', ingrediente.nombre); // Nombre del ingrediente
+                        li.onclick = () => agregarIngredienteATabla(ingrediente); // Función para agregar
+                        listaResultados.appendChild(li);
+                    });
+                    listaResultados.style.display = 'block';
+                } else {
+                    listaResultados.style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Error al buscar ingredientes:', error));
+    }
+
+
+    // Mapa de conversiones entre unidades
+    const conversiones = {
+        'gramos': { 'kilos': 0.001, 'litros': 0.001, 'mililitros': 1, 'cc': 1, 'galon': 0.000264172, 'garrafa': 0.00005 },
+        'kilos': { 'gramos': 1000, 'litros': 1, 'mililitros': 1000, 'cc': 1000, 'galon': 0.264172, 'garrafa': 0.05 },
+        'litros': { 'gramos': 1000, 'kilos': 1, 'mililitros': 1000, 'cc': 1000, 'galon': 0.264172, 'garrafa': 0.05 },
+        'mililitros': { 'gramos': 1, 'kilos': 0.001, 'litros': 0.001, 'cc': 1, 'galon': 0.000264172, 'garrafa': 0.00005 },
+        'cc': { 'gramos': 1, 'kilos': 0.001, 'litros': 0.001, 'mililitros': 1, 'galon': 0.000264172, 'garrafa': 0.00005 },
+        'galon': { 'gramos': 3785.41, 'kilos': 3.78541, 'litros': 3.78541, 'mililitros': 3785.41, 'cc': 3785.41, 'garrafa': 0.18927 },
+        'garrafa': { 'gramos': 20000, 'kilos': 20, 'litros': 20, 'mililitros': 20000, 'cc': 20000, 'galon': 5.28344 }
+    };
+
+    function convertirUnidades(cantidad, unidadOrigen, unidadDestino) {
+        if (!cantidad || !unidadOrigen || !unidadDestino) return null; // Si hay valores nulos
+        if (unidadOrigen === unidadDestino) return cantidad;
+        const factor = conversiones[unidadOrigen]?.[unidadDestino];
+        if (!factor) throw new Error(`No hay conversión definida entre ${unidadOrigen} y ${unidadDestino}`);
+        return cantidad * factor;
+    }
+
+    function calcularCostoPorProducto(fila) {
+        // Obtener referencias usando los placeholders correctos
+        const costoFacturaInput = fila.querySelector('input[placeholder="Costo Factura"]');
+        const cantidadIngInput = fila.querySelector('input[placeholder="Cantidad Ing"]');
+        const unidadFacturaSelect = fila.querySelector('td:nth-child(3) select');
+        const unidadIngSelect = fila.querySelector('td:nth-child(5) select');
+        const costoIngProductoInput = fila.querySelector('input[placeholder="Costo Ing por Producto"]');
+
+        // Si falta algún elemento, retornar temprano
+        if (!costoFacturaInput || !cantidadIngInput || !unidadFacturaSelect || 
+            !unidadIngSelect || !costoIngProductoInput) {
+            console.error("Elementos faltantes en la fila");
+            return;
+        }
+
+        // Leer y validar valores
+        const costoFactura = parseFloat(costoFacturaInput.value) || 0;
+        const cantidadIng = parseFloat(cantidadIngInput.value) || 0;
+        const unidadFactura = unidadFacturaSelect.value;
+        const unidadIng = unidadIngSelect.value;
+
+        // Validación de valores
+        if (costoFactura <= 0 || cantidadIng <= 0 || !unidadFactura || !unidadIng) {
+            costoIngProductoInput.value = "0.00";
+            return;
+        }
+
+        try {
+            const cantidadFacturaConvertida = convertirUnidades(1, unidadIng, unidadFactura);
+            if (!cantidadFacturaConvertida) throw new Error("Error en la conversión de unidades");
+            
+            // Calculamos el costo por unidad de medida del ingrediente
+            const costoPorUnidad = costoFactura * cantidadFacturaConvertida;
+            const costoPorProducto = (costoPorUnidad * cantidadIng).toFixed(2);
+            
+            costoIngProductoInput.value = costoPorProducto;
+            // Actualizar el costo total
+            actualizarCostoTotal();
+        } catch (error) {
+            console.error(`Error en cálculo: ${error.message}`);
+            costoIngProductoInput.value = "0.00";
+        }
+    }
+
+    function agregarIngredienteATabla(ingrediente) {
+        const tabla = document.getElementById('ingredientes-tabla');
+        
+        // Verificar si el ingrediente ya existe
+        if (document.querySelector(`#ingredientes-tabla tr[data-id="${ingrediente.id}"]`)) {
+            alert('Este ingrediente ya ha sido añadido a la tabla.');
+            return;
+        }
+
+        const fila = document.createElement('tr');
+        fila.setAttribute('data-id', ingrediente.id);
+        fila.setAttribute('data-nombre', ingrediente.nombre);
+
+        // Template actualizado para coincidir con la estructura de la tabla
+        fila.innerHTML = `
+            <td>${ingrediente.nombre}</td>
+            <td>
+                <input type="number" 
+                    class="form-control form-control-sm" 
+                    placeholder="Costo Factura"
+                    step="0.01"
+                    min="0">
+            </td>
+            <td>
+                <select class="form-select form-select-sm">
+                    <option value="">Seleccione</option>
+                    <option value="gramos">Gramos</option>
+                    <option value="kilos">Kilos</option>
+                    <option value="litros">Litros</option>
+                    <option value="mililitros">Mililitros</option>
+                    <option value="cc">CC</option>
+                    <option value="galon">Galón</option>
+                    <option value="garrafa">Garrafa</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" 
+                    class="form-control form-control-sm" 
+                    placeholder="Cantidad Ing"
+                    step="0.01"
+                    min="0">
+            </td>
+            <td>
+                <select class="form-select form-select-sm">
+                    <option value="">Seleccione</option>
+                    <option value="gramos">Gramos</option>
+                    <option value="kilos">Kilos</option>
+                    <option value="litros">Litros</option>
+                    <option value="mililitros">Mililitros</option>
+                    <option value="cc">CC</option>
+                    <option value="galon">Galón</option>
+                    <option value="garrafa">Garrafa</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" 
+                    class="form-control form-control-sm" 
+                    placeholder="Costo Ing por Producto" 
+                    readonly>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="eliminarIngredienteDeTabla(this)">
+                    Eliminar
+                </button>
+            </td>
+        `;
+
+        // Agregar eventos a todos los campos de entrada
+        fila.querySelectorAll('input, select').forEach(elemento => {
+            elemento.addEventListener('input', () => calcularCostoPorProducto(fila));
+            elemento.addEventListener('change', () => calcularCostoPorProducto(fila));
+        });
+
+        tabla.appendChild(fila);
+        
+        // Limpiar la búsqueda
+        const resultadosList = document.getElementById('ingrediente_results');
+        const buscarInput = document.getElementById('ingrediente_buscar');
+        if (resultadosList) resultadosList.style.display = 'none';
+        if (resultadosList) resultadosList.innerHTML = '';
+        if (buscarInput) buscarInput.value = '';
+    }
+
+    
+    function actualizarCostoTotal() {
+        const filas = document.querySelectorAll('table tbody tr'); // Asumiendo que las filas están en un tbody dentro de una tabla
+        let costoTotal = 0;
+
+        filas.forEach(fila => {
+            const costoIngProductoInput = fila.querySelector('input[placeholder="Costo Ing por Producto"]');
+            if (costoIngProductoInput) {
+                const costoIngProducto = parseFloat(costoIngProductoInput.value) || 0;
+                costoTotal += costoIngProducto;
+            }
+        });
+
+        // Actualizar el valor en el span
+        const costoTotalSpan = document.getElementById('costoTotal');
+        if (costoTotalSpan) {
+            costoTotalSpan.textContent = `$${costoTotal.toFixed(2)}`;
+        }
+    }
+
+    function eliminarIngredienteDeTabla(boton) {
+        const fila = boton.closest('tr');
+        fila.remove();
+    }
+
+</script>
+
+{% endblock %}

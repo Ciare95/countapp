@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Registro de Ingresos{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+   <div class="container-fluid py-3">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+           <h2 class="mb-0">Registro de Ingresos</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="container mt-3 flash-message">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+           <div>
+               <a href="/facturas/mis_facturas" class="btn btn-info btn-sm">Ver facturas</a>
+               <a href="/proveedores/listar" class="btn btn-info btn-sm">Proveedores</a>
+               <a href="/informes/obtener_egresos" class="btn btn-info btn-sm">Otros egresos</a>
+           </div>
+       </div>
+   </div>
+
+   <!-- Sección Crear Factura -->
+   <div class="card mb-4">
+       <div class="card-header bg-dark text-white">
+           <h5 class="mb-0">Crear Factura</h5>
+       </div>
+       <div class="card-body">
+           <form id="form-factura" class="row g-3">
+               <div class="col-md-4">
+                   <label class="form-label">Número de Factura (Proveedor)</label>
+                   <input type="text" id="numero_factura" name="numero_factura" class="form-control form-control-sm" required>
+               </div>
+               <div class="col-md-4">
+                   <label class="form-label">Proveedor</label>
+                   <select id="id-proveedor" name="id-proveedor" class="form-control form-control-sm" required></select>
+               </div>
+               <div class="col-md-4">
+                   <label class="form-label">Total</label>
+                   <input type="number" id="total" name="total" class="form-control form-control-sm" required>
+               </div>
+               <div class="col-12">
+                   <button type="submit" class="btn btn-success btn-sm">Crear Factura</button>
+               </div>
+           </form>
+       </div>
+   </div>
+
+   <!-- Sección Agregar Productos -->
+   <div class="card mb-4">
+       <div class="card-header bg-dark text-white">
+           <h5 class="mb-0">Agregar Productos a la Factura</h5>
+       </div>
+       <div class="card-body">
+           <form id="form-agregar-producto" class="row g-3">
+               <div class="col-md-6">
+                   <label class="form-label">Número de Factura</label>
+                   <input type="text" class="form-control form-control-sm" id="numero-factura" required>
+               </div>
+               <div class="col-md-6">
+                   <label class="form-label">ID o nombre del Producto</label>
+                   <div class="position-relative">
+                       <input type="text" class="form-control form-control-sm" id="id-producto" oninput="buscarProducto(this.value)" required>
+                       <ul id="product-suggestions" class="list-group position-absolute w-100 z-10" style="display: none;"></ul>
+                   </div>
+               </div>
+               
+               <div class="col-md-4">
+                   <label class="form-label">Cantidad</label>
+                   <input type="number" class="form-control form-control-sm" id="cantidad" required>
+               </div>
+               <div class="col-md-4">
+                   <label class="form-label">Precio de Compra</label>
+                   <input type="number" class="form-control form-control-sm" id="precio_compra" required>
+               </div>
+
+               <div class="col-md-4">
+                   <label class="form-label">Porcentaje de IVA (%)</label>
+                   <input type="number" class="form-control form-control-sm" id="porcentaje_iva" value="0">
+               </div>
+               <div class="col-md-4">
+                   <label class="form-label">Porcentaje de Transporte (%)</label>
+                   <input type="number" class="form-control form-control-sm" id="porcentaje_transporte" value="0">
+               </div>
+               <div class="col-md-4">
+                   <label class="form-label">Precio de Compra Final</label>
+                   <input type="text" class="form-control form-control-sm" id="precio_compra_final" disabled>
+               </div>
+
+               <div class="col-md-4">
+                    <label class="form-label">Precio de Venta</label>
+                    <input type="number" class="form-control form-control-sm" id="precio_venta" required>
+                </div>
+
+               <div class="col-12">
+                   <button type="submit" class="btn btn-success btn-sm">Agregar Producto</button>
+               </div>
+           </form>
+       </div>
+   </div>
+
+   <!-- Sección Otros Egresos -->
+   <div class="card mb-4">
+       <div class="card-header bg-dark text-white">
+           <h5 class="mb-0">Registrar Otros Egresos</h5>
+       </div>
+       <div class="card-body">
+           <form id="form-otros-egresos" class="row g-3">
+               <div class="col-md-6">
+                   <label class="form-label">Descripción</label>
+                   <input type="text" class="form-control form-control-sm" id="descripcion" required>
+               </div>
+               <div class="col-md-6">
+                   <label class="form-label">Valor</label>
+                   <input type="number" step="0.01" class="form-control form-control-sm" id="valor" required>
+               </div>
+               <div class="col-12">
+                   <button type="submit" class="btn btn-success btn-sm">Registrar Egreso</button>
+               </div>
+           </form>
+       </div>
+   </div>
+</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+        const cargarProveedores = async () => {
+            try {
+                const response = await fetch('/proveedores/api');
+                const proveedores = await response.json();
+                const selectProveedor = document.getElementById('id-proveedor');
+                proveedores.forEach(proveedor => {
+                    const option = document.createElement('option');
+                    option.value = proveedor.id;
+                    option.textContent = proveedor.nombre;
+                    selectProveedor.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error al cargar proveedores:', error);
+                alert('Error al cargar proveedores');
+            }
+        };
+
+        const buscarProducto = async (termino) => {
+            const suggestionsList = document.getElementById('product-suggestions');
+            if (!termino) {
+                suggestionsList.style.display = 'none';
+                return;
+            }
+            try {
+                const response = await fetch(`/productos/buscar/${termino}`);
+                if (!response.ok) throw new Error('Error en la solicitud: ' + response.statusText);
+                const data = await response.json();
+                suggestionsList.innerHTML = '';
+                data.forEach(producto => {
+                    const item = document.createElement('li');
+                    item.classList.add('list-group-item', 'cursor-pointer', 'hover:bg-gray-100');
+                    item.textContent = `${producto.nombre} - $${producto.precio}`;
+                    item.addEventListener('click', () => seleccionarProducto(producto));
+                    suggestionsList.appendChild(item);
+                });
+                suggestionsList.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al buscar el producto.');
+            }
+        };
+
+        const seleccionarProducto = (producto) => {
+            const inputProducto = document.getElementById('id-producto');
+            const suggestionsList = document.getElementById('product-suggestions');
+            if (inputProducto) {
+                inputProducto.value = producto.id;
+                inputProducto.setAttribute('data-nombre', producto.nombre);
+                suggestionsList.style.display = 'none';
+            }
+        };
+
+        const actualizarPrecioCompraFinal = () => {
+            const precioCompra = parseFloat(document.getElementById('precio_compra').value);
+            const porcentajeIva = parseFloat(document.getElementById('porcentaje_iva').value) || 0;
+            const porcentajeTransporte = parseFloat(document.getElementById('porcentaje_transporte').value) || 0;
+            if (!isNaN(precioCompra)) {
+                const precioFinal = precioCompra * (1 + porcentajeIva/100 + porcentajeTransporte/100);
+                document.getElementById('precio_compra_final').value = precioFinal.toFixed(2);
+            }
+        };
+
+        document.getElementById('precio_compra').addEventListener('input', actualizarPrecioCompraFinal);
+        document.getElementById('porcentaje_iva').addEventListener('input', actualizarPrecioCompraFinal);
+        document.getElementById('porcentaje_transporte').addEventListener('input', actualizarPrecioCompraFinal);
+        actualizarPrecioCompraFinal();
+
+        const formFactura = document.getElementById('form-factura');
+        if (formFactura) {
+            formFactura.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = {
+                    numero_factura: document.getElementById('numero_factura').value,
+                    total: document.getElementById('total').value,
+                    id_proveedor: document.getElementById('id-proveedor').value,
+                };
+                try {
+                    const response = await fetch('/facturas/registro_ingresos/crear_factura', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    alert(response.ok ? 'Factura creada exitosamente' : 'Error al crear la factura');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al crear la factura');
+                }
+            });
+        }
+
+        const formAgregarProducto = document.getElementById('form-agregar-producto');
+        if (formAgregarProducto) {
+            formAgregarProducto.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = {
+                    numero_factura: document.getElementById('numero-factura').value,
+                    id_producto: document.getElementById('id-producto').value,
+                    cantidad: document.getElementById('cantidad').value,
+                    precio_compra: document.getElementById('precio_compra').value,
+                    porcentaje_iva: document.getElementById('porcentaje_iva').value || '0',
+                    precio_venta: document.getElementById('precio_venta').value,
+                };
+                try {
+                    const response = await fetch('/informes/registro_ingresos/agregar_producto', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    if (response.ok) {
+                        const result = await response.json();
+                        alert(result.message);
+                        formAgregarProducto.reset();
+                    } else {
+                        const error = await response.json();
+                        alert(error.error || 'Error al agregar producto');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al agregar producto');
+                }
+            });
+        }
+
+        const formOtrosEgresos = document.getElementById('form-otros-egresos');
+        if (formOtrosEgresos) {
+            formOtrosEgresos.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = {
+                    descripcion: document.getElementById('descripcion').value,
+                    valor: document.getElementById('valor').value
+                };
+                try {
+                    const response = await fetch('/informes/registro_ingresos/otros_egresos', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    alert(response.ok ? 'Egreso registrado exitosamente' : 'Error al registrar egreso');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al registrar egreso');
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            const suggestionsList = document.getElementById('product-suggestions');
+            const inputProducto = document.getElementById('id-producto');
+            if (!suggestionsList.contains(e.target) && e.target !== inputProducto) {
+                suggestionsList.style.display = 'none';
+            }
+        });
+
+        cargarProveedores();
+        window.buscarProducto = buscarProducto;
+        window.seleccionarProducto = seleccionarProducto;
+        });
+        // Seleccionar todos los mensajes flash
+        const flashMessages = document.querySelectorAll('.flash-message');
+        // Configurar un temporizador para cada mensaje
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                // Usar fade-out para una transición suave
+                message.classList.remove('show');
+                message.classList.add('fade');
+                setTimeout(() => message.remove(), 300); // Remover después de la transición
+            }, 3000); // 3 segundos
+        });
+    </script>
+
+{% endblock %}

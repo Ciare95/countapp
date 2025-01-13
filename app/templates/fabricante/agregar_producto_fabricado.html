@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center">Crear Producto Fabricado</h1>
+    <form action="{{ url_for('fabricante.crear_producto') }}" method="POST" class="mt-4">
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" name="nombre" id="nombre" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="unidad_medida" class="form-label">Unidad de Medida</label>
+            <input type="text" name="unidad_medida" id="unidad_medida" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="cantidad_producida" class="form-label">Cantidad Producida</label>
+            <input type="number" name="cantidad_producida" id="cantidad_producida" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="precio_venta" class="form-label">Precio de Venta</label>
+            <input type="number" name="precio_venta" id="precio_venta" class="form-control" required>
+        </div>
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Crear</button>
+            <a href="{{ url_for('fabricante.index') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

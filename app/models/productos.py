@@ -1,0 +1,231 @@
+from app.db import connection_pool
+
+
+class Producto:
+    def __init__(self, id=None, nombre=None, id_categorias=None, precio=None, cantidad=None, precio_compra=None):
+        self.id = id
+        self.nombre = nombre
+        self.id_categorias = id_categorias
+        self.precio = precio
+        self.precio_compra = precio_compra
+        self.cantidad = cantidad
+        
+    def formato_peso_colombiano(valor):
+        if valor is None:
+            return "0"
+        return f"{'{:,.0f}'.format(float(valor)).replace(',', '.')}"
+
+    def crear_producto(self):
+        conexion = connection_pool.get_connection()
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            sql = """INSERT INTO productos 
+                    (nombre, id_categorias, stock, precio, precio_compra) 
+                    VALUES (%s, %s, %s, %s, %s)"""
+            valores = (self.nombre, self.id_categorias, self.cantidad, 
+                    self.precio, self.precio_compra)
+            cursor.execute(sql, valores)
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al crear el producto: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+
+    def actualizar_producto(self):
+        if not self.id:
+            return False
+        conexion = connection_pool.get_connection()
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            sql = "UPDATE productos SET nombre = %s, id_categorias = %s, stock = %s, precio = %s, precio_compra = %s WHERE id = %s"
+            cursor.execute(sql, (self.nombre, self.id_categorias, self.cantidad, self.precio, self.precio_compra, self.id))
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al actualizar el producto: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+
+
+    def obtener_por_id(self, id):
+        conexion = connection_pool.get_connection()
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            sql = "SELECT id, nombre, id_categorias, stock, precio, precio_compra FROM productos WHERE id = %s"
+            cursor.execute(sql, (id,))
+            resultado = cursor.fetchone()
+            if resultado:
+                self.id = resultado[0]
+                self.nombre = resultado[1]
+                self.id_categorias = resultado[2]
+                self.cantidad = resultado[3]
+                self.precio = resultado[4]
+                self.precio_compra = resultado[5]
+                return self
+            return None
+        except Exception as e:
+            print(f"Error al obtener el producto: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+
+    def obtener_todos(self):
+        conexion = connection_pool.get_connection()
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            sql = """
+                SELECT 
+                    p.id,
+                    p.nombre AS producto_nombre,
+                    COALESCE(c.nombre, 'Sin categoría') AS categoria_nombre,
+                    p.stock,
+                    p.precio,
+                    p.precio_compra,
+                    p.id_categorias as categoria_id
+                FROM 
+                    productos p
+                LEFT JOIN 
+                    categorias c ON p.id_categorias = c.id
+            """
+            cursor.execute(sql)
+            resultados = cursor.fetchall()
+            
+            def formato_peso_colombiano(valor):
+                if valor is None:
+                    return "0"
+                return f"{'{:,.0f}'.format(float(valor)).replace(',', '.')}"
+            
+            productos = []
+            for resultado in resultados:
+                producto = {
+                    'id': resultado[0],
+                    'producto_nombre': resultado[1],
+                    'categoria_nombre': resultado[2],
+                    'stock': resultado[3],
+                    'precio': formato_peso_colombiano(resultado[4]),
+                    'precio_compra': formato_peso_colombiano(resultado[5]),
+                    'categoria_id': resultado[6]
+                }
+                productos.append(producto)
+            return productos
+        except Exception as e:
+            print(f"Error al obtener productos: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+
+            
+
+    def eliminar_producto(self):
+        if not self.id:
+            return False
+        conexion = connection_pool.get_connection()
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            sql = "DELETE FROM productos WHERE id = %s"
+            cursor.execute(sql, (self.id,))
+            conexion.commit()
+            self.id = None
+            return True
+        except Exception as e:
+            print(f"Error al eliminar el producto: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+            
+            
+    def buscar_por_nombre_o_id(self, query):
+        conexion = connection_pool.get_connection()
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            sql = """
+                SELECT 
+                    id, 
+                    nombre, 
+                    stock, 
+                    precio 
+                FROM 
+                    productos 
+                WHERE 
+                    nombre LIKE %s OR id = %s
+            """
+            cursor.execute(sql, (f"%{query}%", query))
+            resultados = cursor.fetchall()
+            
+            productos = []
+            for resultado in resultados:
+                productos.append({
+                    'id': resultado[0],
+                    'nombre': resultado[1],
+                    'stock': resultado[2],
+                    'precio': resultado[3],
+                    'precio_compra': resultado[4]
+                })
+            return productos
+        except Exception as e:
+            print(f"Error al buscar productos: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+
+
+    def obtener_por_categoria(self, categoria_id):
+        conexion = connection_pool.get_connection()
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            sql = """
+                SELECT 
+                    p.id,
+                    p.nombre AS producto_nombre,
+                    p.stock,
+                    p.precio,
+                    p.precio_compra
+                FROM 
+                    productos p
+                WHERE 
+                    p.id_categorias = %s
+            """
+            cursor.execute(sql, (categoria_id,))
+            resultados = cursor.fetchall()
+
+            productos = []
+            for resultado in resultados:
+                producto = {
+                    'id': resultado[0],
+                    'producto_nombre': resultado[1],
+                    'stock': resultado[2],
+                    'precio': Producto.formato_peso_colombiano(resultado[3]),
+                    'precio_compra': Producto.formato_peso_colombiano(resultado[4])
+                }
+                productos.append(producto)
+
+            return productos
+        except Exception as e:
+            print(f"Error al obtener productos por categoría: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de la venta{% endblock %}
+
+{% block content %}
+<body>
+    
+    <div class="container mt-5">
+        <div class="venta-container mb-5">
+            <h3>Detalles de la Venta</h3>
+            <p><strong>ID Factura:</strong> {{ venta.id_venta }}</p>
+            <p><strong>Fecha:</strong> {{ venta.fecha_venta }}</p>
+            <p><strong>Vendedor</strong> {{ venta.usuario }} </p>
+            <p><strong>Total:</strong> ${{ venta.total_venta }}</p>
+            <p><strong>Saldo:</strong> ${{ venta.saldo }}</p>
+            <p><strong>Estado:</strong> {{ venta.estado }}</p>
+
+            <h3>Productos</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unitario</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in detalles %}
+                    <tr>
+                        <td>{{ detalle.producto }}</td>
+                        <td>{{ detalle.cantidad }}</td>
+                        <td>${{ detalle.precio }}</td>
+                        <td>${{ detalle.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if abonos %}
+                <h3>Abonos</h3>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for abono in abonos %}
+                        <tr>
+                            <td>{{ abono.fecha_abono }}</td>
+                            <td>${{ abono.monto }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No se han registrado abonos.</p>
+            {% endif %}
+
+            <form class="form-abono" data-venta-id="{{ venta.id_venta }}">
+                <div class="mb-3">
+                    <label for="monto-abono" class="form-label">Monto del Abono</label>
+                    <input type="number" step="0.01" id="monto-abono" class="form-control" placeholder="Ingresa el monto" required>
+                </div>
+                <button type="submit" class="btn btn-success btn-sm">Registrar Abono</button>
+                <a href="/historial/historial_general" class="btn btn-secondary btn-sm">Volver al Historial</a>
+                <a href="{{ url_for('ventas.generar_factura_pdf', id_venta=venta.id_venta) }}" 
+                    class="btn btn-primary btn-sm">
+                    Descargar Factura PDF
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Función reutilizable para registrar un abono
+        function registrarAbono(idVenta, monto) {
+            if (!monto || monto <= 0) {
+                mostrarMensaje('El monto debe ser mayor a 0.', 'danger');
+                return;
+            }
+    
+            fetch('/abonos/agregar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_venta: idVenta, monto: monto }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.error) {
+                    mostrarMensaje(`Error: ${data.error}`, 'danger');
+                } else {
+                    mostrarMensaje('Abono registrado exitosamente.', 'success');
+                    setTimeout(() => location.reload(), 2000); // Recargar la página después de 2 segundos
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                mostrarMensaje('Ocurrió un error al registrar el abono.', 'danger');
+            });
+        }
+    
+        // Manejo del formulario de abono
+        document.querySelector('.form-abono').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const ventaId = this.dataset.ventaId;
+            const monto = parseFloat(document.getElementById('monto-abono').value);
+            registrarAbono(ventaId, monto);
+        });
+    
+        // Función para mostrar mensajes en la interfaz
+        function mostrarMensaje(mensaje, tipo) {
+            const mensajeDiv = document.createElement('div');
+            mensajeDiv.className = `alert alert-${tipo} alert-dismissible fade show`;
+            mensajeDiv.role = 'alert';
+            mensajeDiv.innerHTML = `
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(mensajeDiv);
+    
+            // Eliminar el mensaje después de 3 segundos
+            setTimeout(() => mensajeDiv.remove(), 3000);
+        }
+    </script>
+    
+</body>
+{% endblock %}
+
+
+

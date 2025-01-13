@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Listado de productos</h1>
+        <button id="btn-crear" class="btn btn-success">Crear Producto</button>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3 flash-message">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    
+    <!-- Tabla de Productos -->
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Precio de Compra</th>
+                <th>Stock</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.producto_nombre }}</td>
+                <td>{{ producto.categoria_nombre }}</td>
+                <td>${{ producto.precio }}</td>
+                <td>${{ producto.precio_compra }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm btn-editar" 
+                        data-id="{{ producto.id }}" 
+                        data-nombre="{{ producto.producto_nombre }}" 
+                        data-categoria="{{ producto.categoria_id }}" 
+                        data-precio="{{ producto.precio }}" 
+                        data-precio-compra="{{ producto.precio_compra }}" 
+                        data-stock="{{ producto.stock }}">
+                        Editar
+                    </button>
+                    <form action="{{ url_for('producto.eliminar_producto', id=producto.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirmarEliminacion()">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <!-- Modal Crear -->
+    <div id="modal-crear" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crear Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('producto.crear_producto') }}">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre del Producto</label>
+                            <input type="text" class="form-control" name="nombre" id="crear-nombre" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label">Categoría</label>
+                            <select class="form-select" name="categoria" id="crear-categoria" required>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                                {% else %}
+                                    <option disabled>No hay categorías disponibles</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="precio_compra" class="form-label">Precio de Compra</label>
+                            <input type="number" class="form-control" name="precio_compra" id="crear-precio-compra" step="0.01" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="porcentaje_iva" class="form-label">Porcentaje de IVA (%)</label>
+                            <input type="number" class="form-control" id="crear-porcentaje-iva" step="0.01" value="0">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="porcentaje_transporte" class="form-label">Porcentaje de Transporte (%)</label>
+                            <input type="number" class="form-control" id="crear-porcentaje-transporte" step="0.01" value="0">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="precio_compra_final" class="form-label">Precio de Compra Final (con IVA y Transporte)</label>
+                            <input type="text" class="form-control" id="crear-precio-compra-final" disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="precio" class="form-label">Precio de Venta</label>
+                            <input type="number" class="form-control" name="precio" id="crear-precio" step="0.01" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="stock" class="form-label">Stock</label>
+                            <input type="number" class="form-control" name="stock" id="crear-stock" required>
+                        </div>
+
+                        <div class="text-end mt-3">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Crear Producto</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar -->
+    <div id="modal-editar" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="editar-form" action="{{ url_for('producto.editar_producto', id=0) }}">
+                        <input type="hidden" name="id" id="editar-id">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre del Producto</label>
+                            <input type="text" class="form-control" name="nombre" id="editar-nombre" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label">Categoría</label>
+                            <select class="form-select" name="categoria" id="editar-categoria" required>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                                {% else %}
+                                    <option disabled>No hay categorías disponibles</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        
+                        <div class="mb-3">
+                            <label for="precio_compra" class="form-label">Precio de Compra</label>
+                            <input type="text" class="form-control" name="precio_compra" id="editar-precio-compra" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="precio" class="form-label">Precio de Venta</label>
+                            <input type="text" class="form-control" name="precio" id="editar-precio" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="stock" class="form-label">Stock</label>
+                            <input type="number" class="form-control" name="stock" id="editar-stock" required>
+                        </div>
+
+                        <div class="text-end mt-3">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Actualizar Producto</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Inicializar modales
+            const modalCrear = new bootstrap.Modal(document.getElementById("modal-crear"));
+            const modalEditar = new bootstrap.Modal(document.getElementById("modal-editar"));
+    
+            // Botón para abrir el modal de creación
+            const btnCrear = document.getElementById("btn-crear");
+            btnCrear.addEventListener("click", () => {
+                modalCrear.show();
+            });
+    
+            // Botones para abrir el modal de edición
+            const btnsEditar = document.querySelectorAll(".btn-editar");
+            btnsEditar.forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const id = btn.dataset.id;
+                    const nombre = btn.dataset.nombre;
+                    const categoria = btn.dataset.categoria;
+                    // Eliminar el símbolo $ y convertir a número
+                    const precio = parseFloat(btn.dataset.precio.replace('$', '').replace(/\./g, ''));
+                    const precioCompra = parseFloat(btn.dataset.precioCompra.replace('$', '').replace(/\./g, ''));
+                    const stock = btn.dataset.stock;
+
+                    // Actualizar la URL del formulario
+                    const form = document.getElementById("editar-form");
+                    form.action = form.action.replace('/0', `/${id}`);
+
+                    // Establecer los valores en el formulario
+                    document.getElementById("editar-id").value = id;
+                    document.getElementById("editar-nombre").value = nombre;
+                    document.getElementById("editar-categoria").value = categoria;
+                    document.getElementById("editar-precio").value = formatAsCurrency(precio);
+                    document.getElementById("editar-precio-compra").value = formatAsCurrency(precioCompra);
+                    document.getElementById("editar-stock").value = stock;
+
+                    modalEditar.show();
+                });
+            });
+    
+            // Formatear valores de precio y precio de compra al cargar la página
+            const precioField = document.getElementById("editar-precio");
+            const precioCompraField = document.getElementById("editar-precio-compra");
+            if (precioField && precioCompraField) {
+                precioField.value = formatAsCurrency(parseFloat(precioField.value) || 0);
+                precioCompraField.value = formatAsCurrency(parseFloat(precioCompraField.value) || 0);
+            }
+        });
+    
+        // Función para confirmar eliminación
+        function confirmarEliminacion() {
+            return confirm("¿Estás seguro de que deseas eliminar este producto?");
+        }
+    
+        // Función para calcular precio de compra final
+        const calcularPrecioCompraFinal = (precioCompra, porcentajeIVA, porcentajeTransporte) => {
+            const iva = (precioCompra * porcentajeIVA) / 100;
+            const transporte = (precioCompra * porcentajeTransporte) / 100;
+            return precioCompra + iva + transporte;
+        };
+    
+        // Actualizar el precio de compra final al cambiar los valores
+        const actualizarPrecioCompraFinal = () => {
+            const precioCompra = parseFloat(document.getElementById('crear-precio-compra').value) || 0;
+            const porcentajeIVA = parseFloat(document.getElementById('crear-porcentaje-iva').value) || 0;
+            const porcentajeTransporte = parseFloat(document.getElementById('crear-porcentaje-transporte').value) || 0;
+    
+            const precioCompraFinal = calcularPrecioCompraFinal(precioCompra, porcentajeIVA, porcentajeTransporte);
+            document.getElementById('crear-precio-compra-final').value = precioCompraFinal.toFixed(2);
+        };
+    
+        document.getElementById('crear-precio-compra').addEventListener('input', actualizarPrecioCompraFinal);
+        document.getElementById('crear-porcentaje-iva').addEventListener('input', actualizarPrecioCompraFinal);
+        document.getElementById('crear-porcentaje-transporte').addEventListener('input', actualizarPrecioCompraFinal);
+    
+        // Función para formatear los números como moneda
+        const formatAsCurrency = (value) => {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        };
+    
+        // Función para convertir string de moneda a número
+        const currencyToNumber = (currencyString) => {
+            return parseFloat(currencyString
+                .replace(/[^\d,.-]/g, '') // Eliminar símbolo de moneda y caracteres no numéricos
+                .replace(/\./g, '')      // Eliminar puntos de miles
+                .replace(',', '.'));     // Reemplazar coma decimal por punto
+        };
+    
+        // Antes de enviar el formulario, convertir valores formateados a números
+        document.getElementById("editar-form").addEventListener("submit", (event) => {
+            const precioField = document.getElementById("editar-precio");
+            const precioCompraField = document.getElementById("editar-precio-compra");
+    
+            precioField.value = currencyToNumber(precioField.value);
+            precioCompraField.value = currencyToNumber(precioCompraField.value);
+        });
+        // Seleccionar todos los mensajes flash
+        const flashMessages = document.querySelectorAll('.flash-message');
+        // Configurar un temporizador para cada mensaje
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                // Usar fade-out para una transición suave
+                message.classList.remove('show');
+                message.classList.add('fade');
+                setTimeout(() => message.remove(), 300); // Remover después de la transición
+            }, 3000); // 3 segundos
+        });
+    </script>
+    
+{% endblock %}
