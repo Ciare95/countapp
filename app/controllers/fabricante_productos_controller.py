@@ -49,13 +49,26 @@ def crear_producto():
 
 @fabricante_productos_bp.route('/<int:producto_id>/editar', methods=['GET', 'POST'])
 def editar_producto(producto_id):
-    # Editar un producto fabricado existente
+    # Obtener el producto
     producto = ProductoFabricado.obtener_por_id(producto_id)
 
     if not producto:
         return redirect(url_for('fabricante_productos.index'))
 
     if request.method == 'POST':
+        # Verificar si la actualización es para el costo total o para otros campos
+        costo_total = request.form.get('costo_total')
+        if costo_total:
+            # Validar que el costo total esté presente
+            if not costo_total:
+                return {"success": False, "message": "El costo total es obligatorio."}, 400
+
+            # Actualizar solo el costo total
+            ProductoFabricado.actualizar_costo_total(producto_id=producto_id, costo_total=costo_total)
+
+            return {"success": True, "message": "Costo total actualizado correctamente."}, 200
+
+        # Si no es la actualización de costo total, procesar otros campos
         nombre = request.form.get('nombre')
         unidad_medida = request.form.get('unidad_medida')
         cantidad_producida = request.form.get('cantidad_producida')
@@ -75,6 +88,7 @@ def editar_producto(producto_id):
         return redirect(url_for('fabricante_productos.index'))
 
     return render_template('fabricante/editar_producto.html', producto=producto)
+
 
 
 
@@ -147,12 +161,14 @@ def ver_producto_fabricado(producto_id):
     ingredientes_data = []
     for ingrediente in ingredientes:
         ingredientes_data.append({
+            'id': ingrediente['ingrediente_id'],  
             'nombre': ingrediente['nombre'],
             'costo_factura': ingrediente['costo_factura'],
             'costo_ing_por_producto': ingrediente['costo_ing_por_producto'],
             'unidad_medida': ingrediente['unidad_medida'],
             'cantidad_ing': ingrediente['cantidad_ing'],
             'cantidad_factura': ingrediente['cantidad_factura'],
+            'costo_empaque': ingrediente['costo_empaque'],
         })
 
     # Renderizar la plantilla con los datos

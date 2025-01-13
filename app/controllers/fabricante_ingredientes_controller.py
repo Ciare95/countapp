@@ -127,6 +127,7 @@ def editar():
         cantidad_ing = request.form.get('cantidad_ing')
         cantidad_factura = request.form.get('cantidad_factura')
         costo_ing_por_producto = request.form.get('costo_ing_por_producto')
+        costo_empaque = request.form.get('costo_empaque')
 
         # Validar campos requeridos
         required_fields = {
@@ -134,7 +135,8 @@ def editar():
             'unidad_medida': unidad_medida,
             'cantidad_ing': cantidad_ing,
             'cantidad_factura': cantidad_factura,
-            'costo_ing_por_producto': costo_ing_por_producto
+            'costo_ing_por_producto': costo_ing_por_producto,
+            'costo_empaque': costo_empaque
         }
 
         missing_fields = [k for k, v in required_fields.items() if not v]
@@ -157,7 +159,8 @@ def editar():
             valores_numericos = {
                 'costo_factura': decimal.Decimal(costo_factura),
                 'cantidad_ing': decimal.Decimal(cantidad_ing),
-                'costo_ing_por_producto': decimal.Decimal(costo_ing_por_producto)
+                'costo_ing_por_producto': decimal.Decimal(costo_ing_por_producto),
+                'costo_empaque': decimal.Decimal(costo_empaque)
             }
 
             # Validar que los valores sean positivos
@@ -181,7 +184,8 @@ def editar():
             unidad_medida,
             valores_numericos['cantidad_ing'],
             cantidad_factura,
-            valores_numericos['costo_ing_por_producto']
+            valores_numericos['costo_ing_por_producto'],
+            valores_numericos['costo_empaque']
         )
         
         return jsonify({

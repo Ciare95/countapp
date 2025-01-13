@@ -91,7 +91,7 @@ class IngredienteProducto:
 
 
     @staticmethod
-    def actualizar(ingrediente_id, costo_factura, unidad_medida, cantidad_ing, cantidad_factura, costo_ing_por_producto):
+    def actualizar(ingrediente_id, costo_factura, unidad_medida, cantidad_ing, cantidad_factura, costo_ing_por_producto, costo_empaque):
         query = """
         UPDATE ingredientes_producto
         SET 
@@ -99,7 +99,8 @@ class IngredienteProducto:
             unidad_medida = %s,
             cantidad_ing = %s,
             cantidad_factura = %s,
-            costo_ing_por_producto = %s
+            costo_ing_por_producto = %s,
+            costo_empaque = %s
         WHERE ingrediente_id = %s
         """
         
@@ -109,6 +110,7 @@ class IngredienteProducto:
             cantidad_ing = decimal.Decimal(cantidad_ing) if cantidad_ing else None
             costo_ing_por_producto = decimal.Decimal(costo_ing_por_producto)
             ingrediente_id = int(ingrediente_id)
+            costo_empaque = decimal.Decimal(costo_empaque)
         except (decimal.InvalidOperation, ValueError) as e:
             raise ValueError(f"Error en la conversión de tipos: {str(e)}")
 
@@ -121,6 +123,7 @@ class IngredienteProducto:
                     cantidad_ing,
                     cantidad_factura,
                     costo_ing_por_producto,
+                    costo_empaque,
                     ingrediente_id
                 ))
                 

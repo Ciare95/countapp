@@ -87,7 +87,8 @@ class ProductoFabricado:
                 ip.unidad_medida,
                 ip.cantidad_ing,
                 ip.cantidad_factura,
-                i.id as ingrediente_id
+                i.id as ingrediente_id,
+                ip.costo_empaque
             FROM ingredientes_producto ip
             JOIN ingredientes i ON ip.ingrediente_id = i.id
             WHERE ip.producto_id = %s

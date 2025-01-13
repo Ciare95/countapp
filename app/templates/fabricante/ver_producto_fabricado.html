@@ -6,6 +6,7 @@
 
     <div class="mb-3">
         <h3 class="card-title">{{ producto.nombre }}</h3>
+        <input type="hidden" id="productoId" value="{{ producto.id }}">
     </div>
 
     <h3>Ingredientes</h3>
@@ -23,7 +24,7 @@
         </thead>
         <tbody>
             {% for ingrediente in ingredientes %}
-            <tr data-id="{{ ingrediente.ingrediente_id }}">
+            <tr data-id="{{ ingrediente.id }}">
                 <td>{{ ingrediente.nombre }}</td>
                 <td class="editable-cell">
                     <span class="display-value">{{ ingrediente.costo_factura }}</span>
@@ -88,18 +89,22 @@
         </tbody>
     </table>
 
+    <input type="hidden" id="productoId" value="{{ producto.id }}">
     <div class="row mt-3">
         <div class="col-md-6">
-            <div class="input-group mb-3">
-                <span class="input-group-text">Costo de Empaque</span>
-                <input type="number" 
-                    id="costoEmpaque" 
-                    class="form-control" 
-                    value="0" 
-                    min="0" 
-                    step="0.01" 
-                    onchange="actualizarCostoTotal()">
+            <div class="col-md-6">
+                <div class="input-group mb-3">
+                    <span class="input-group-text">Costo de Empaque</span>
+                    <input type="number" 
+                        id="costoEmpaque" 
+                        class="form-control" 
+                        value="{{ ingredientes[0].costo_empaque }}"  
+                        min="0" 
+                        step="0.01" 
+                        onchange="actualizarCostoEmpaque('{{ producto.id }}'); actualizarCostoTotal()">
+                </div>
             </div>
+            
         </div>
         <div class="col-md-6">
             <h4>Subtotal Ingredientes: <span id="subtotalIngredientes">$0.00</span></h4>
@@ -145,7 +150,6 @@
                 }
 
                 const value = input.value.trim();
-                
                 if (!value) {
                     input.classList.add('is-invalid');
                     validationData.errors.push(`${field.name} es requerido`);
@@ -168,11 +172,35 @@
             });
 
             // Agregar el costo por producto calculado
-            const costoProducto = row.querySelector('.costo-producto span').textContent;
-            validationData.formData.append('costo_ing_por_producto', costoProducto.replace(/[^0-9.]/g, ''));
+            const costoProducto = row.querySelector('.costo-producto span');
+            if (costoProducto) {
+                const costoProductoValue = costoProducto.textContent.replace(/[^0-9.]/g, '');
+                if (!costoProductoValue || isNaN(parseFloat(costoProductoValue))) {
+                    validationData.errors.push('Costo del producto no válido');
+                    validationData.isValid = false;
+                } else {
+                    validationData.formData.append('costo_ing_por_producto', costoProductoValue);
+                }
+            }
+
+            // Agregar el costo del empaque
+            const costoEmpaque = document.getElementById('costoEmpaque');
+            if (costoEmpaque && costoEmpaque.value) {
+                const empaqueValue = parseFloat(costoEmpaque.value);
+                if (isNaN(empaqueValue) || empaqueValue < 0) {
+                    validationData.errors.push('Costo de empaque no válido');
+                    validationData.isValid = false;
+                } else {
+                    validationData.formData.append('costo_empaque', empaqueValue);
+                }
+            } else {
+                validationData.errors.push('Costo de empaque no encontrado o inválido');
+                validationData.isValid = false;
+            }
 
             return validationData;
         }
+
         // Mapa de conversiones entre unidades
         const conversiones = {
             'gramos': { 'kilos': 0.001, 'litros': 0.001, 'mililitros': 1, 'cc': 1, 'galon': 0.000264172, 'garrafa': 0.00005 },
@@ -270,8 +298,10 @@
         }
 
         function saveChanges(row) {
+            const formData = new FormData();
             // Validar la fila y obtener datos
             const validation = validateRow(row);
+
             if (!validation.isValid) {
                 console.error("Errores de validación:", validation.errors);
                 alert('Por favor corrija los siguientes errores:\n' + validation.errors.join('\n'));
@@ -343,18 +373,153 @@
 
         function actualizarCostoTotal() {
             let subtotalIngredientes = 0;
+
+            // Sumar los costos de los ingredientes
             const celdasCosto = document.querySelectorAll('.costo-producto span');
             celdasCosto.forEach(celda => {
                 const valor = parseFloat(celda.textContent.trim()) || 0;
                 subtotalIngredientes += valor;
             });
-            
+
+            // Obtener el costo del empaque
             const costoEmpaque = parseFloat(document.getElementById('costoEmpaque').value) || 0;
+
+            // Calcular el costo total
             const costoTotal = subtotalIngredientes + costoEmpaque;
 
+            // Actualizar el DOM
             document.getElementById('subtotalIngredientes').textContent = `$${subtotalIngredientes.toFixed(2)}`;
             document.getElementById('costoTotal').textContent = `$${costoTotal.toFixed(2)}`;
+
+            // Obtener el ID del producto del input hidden
+            const productoId = document.getElementById('productoId').value;
+
+            // Solo mostrar mensaje de actualización si el cambio fue iniciado por el usuario
+            window.shouldShowUpdateMessage = true;
+            actualizarCostoTotalEnServidor(productoId);
         }
+
+        // Agregar inicialización al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            window.shouldShowUpdateMessage = false; // No mostrar mensaje en la carga inicial
+            actualizarCostoTotal();
+        });
+
+
+        function actualizarCostoTotalEnServidor(productoId) {
+            const costoTotal = document.getElementById('costoTotal').textContent.replace('$', '').trim();
+            const formData = new FormData();
+            formData.append('costo_total', costoTotal);
+
+            fetch(`/fabricante_productos/${productoId}/editar`, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => Promise.reject(data));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && window.shouldShowUpdateMessage) {
+                    // Mostrar mensaje de éxito solo si fue un cambio del usuario
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-success alert-dismissible fade show mt-2';
+                    alert.innerHTML = `
+                        Costo total actualizado correctamente
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    document.getElementById('costoTotal').closest('.container').insertBefore(alert, document.getElementById('costoTotal').closest('.row'));
+                    
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 3000);
+                    
+                    window.shouldShowUpdateMessage = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error al actualizar el costo total:', error);
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger alert-dismissible fade show mt-2';
+                alert.innerHTML = `
+                    Error al actualizar el costo total: ${error.message || 'Error desconocido'}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.getElementById('costoTotal').closest('.container').insertBefore(alert, document.getElementById('costoTotal').closest('.row'));
+            });
+        }
+
+        function actualizarCostoEmpaque(productoId) {
+            // Obtener el valor del costo empaque
+            const costoEmpaque = document.getElementById('costoEmpaque').value;
+            
+            // Obtener la primera fila de ingredientes
+            const primeraFila = document.querySelector('tbody tr');
+            
+            // Crear FormData con los campos requeridos
+            const formData = new FormData();
+            formData.append('ingrediente_id', primeraFila.getAttribute('data-id'));
+            
+            // Obtener los valores de la primera fila
+            formData.append('costo_factura', primeraFila.querySelector('[name="costo_factura"]').value || 
+                                            primeraFila.querySelector('.display-value').textContent.trim());
+            formData.append('unidad_medida', primeraFila.querySelector('[name="unidad_medida"]').value || 
+                                            primeraFila.querySelector('td:nth-child(5) .display-value').textContent.trim());
+            formData.append('cantidad_ing', primeraFila.querySelector('[name="cantidad_ing"]').value || 
+                                        primeraFila.querySelector('td:nth-child(4) .display-value').textContent.trim());
+            formData.append('cantidad_factura', primeraFila.querySelector('[name="cantidad_factura"]').value || 
+                                            primeraFila.querySelector('td:nth-child(3) .display-value').textContent.trim());
+            formData.append('costo_ing_por_producto', primeraFila.querySelector('.costo-producto span').textContent.trim());
+            formData.append('costo_empaque', costoEmpaque);
+
+            // Enviar los datos al servidor
+            fetch('/fabricante_ingredientes/editar', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => Promise.reject(data));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Actualizar la interfaz
+                    document.getElementById('costoEmpaque').value = costoEmpaque;
+                    actualizarCostoTotal();
+                    
+                    // Mostrar mensaje de éxito
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-success alert-dismissible fade show mt-2';
+                    alert.innerHTML = `
+                        Costo de empaque actualizado correctamente
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    document.getElementById('costoEmpaque').closest('.container').insertBefore(alert, document.getElementById('costoEmpaque').closest('.row'));
+                    
+                    // Auto-ocultar el mensaje después de 3 segundos
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error al actualizar el costo empaque:', error);
+                
+                // Mostrar mensaje de error
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger alert-dismissible fade show mt-2';
+                alert.innerHTML = `
+                    Error al actualizar el costo de empaque: ${error.message || 'Error desconocido'}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.getElementById('costoEmpaque').closest('.container').insertBefore(alert, document.getElementById('costoEmpaque').closest('.row'));
+            });
+        }
+
     </script>
 
 <style>
