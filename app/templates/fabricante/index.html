@@ -13,8 +13,6 @@
         <a href="{{ url_for('fabricante_ingredientes.listar_ingredientes') }}" class="btn btn-primary">Ver Ingredientes</a>
     </div>
 
-
-    
     <table class="table table-striped">
         <thead>
             <tr>
@@ -23,6 +21,8 @@
                 <th>Cantidad Producida</th>
                 <th>Precio de Venta</th>
                 <th>Costo Total</th>
+                <th>Ganancia Neta</th>
+                <th>% Rentabilidad</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -38,7 +38,12 @@
                 <td>{{ producto.cantidad_producida }}</td>
                 <td>{{ producto.precio_venta_formateado() }}</td>
                 <td>{{ producto.costo_total_formateado() }}</td>
-
+                <td>
+                    {{ producto.ganancia_neta | round(2) }}
+                </td>
+                <td>
+                    {{ producto.porcentaje_rentabilidad | round(2) }}%
+                </td>
                 <td>
                     <a href="{{ url_for('fabricante_productos.editar_producto', producto_id=producto.id) }}" class="btn btn-sm btn-warning">Editar</a>
                     <a href="{{ url_for('fabricante_ingredientes.asignar_ingredientes', producto_id=producto.id) }}" class="btn btn-sm btn-info">Asignar Ingredientes</a>
@@ -50,8 +55,5 @@
             {% endfor %}
         </tbody>
     </table>
-    <script>
-        
-    </script>
 </div>
 {% endblock %}

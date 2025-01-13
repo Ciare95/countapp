@@ -1,13 +1,15 @@
 from app.db import connection_pool as db
 
 class ProductoFabricado:
-    def __init__(self, id, nombre, unidad_medida, costo_total, precio_venta, cantidad_producida):
+    def __init__(self, id, nombre, unidad_medida, costo_total, precio_venta, cantidad_producida, ganancia_neta, porcentaje_rentabilidad):
         self.id = id
         self.nombre = nombre
         self.unidad_medida = unidad_medida
         self.costo_total = costo_total
         self.precio_venta = precio_venta
         self.cantidad_producida = cantidad_producida
+        self.ganancia_neta = ganancia_neta
+        self.porcentaje_rentabilidad = porcentaje_rentabilidad
 
     @staticmethod
     def formato_peso_colombiano(valor):
@@ -20,6 +22,7 @@ class ProductoFabricado:
 
     def costo_total_formateado(self):
         return self.formato_peso_colombiano(self.costo_total)
+    
 
     @staticmethod
     def obtener_todos():
@@ -29,7 +32,27 @@ class ProductoFabricado:
             cursor.execute(query)
             resultados = cursor.fetchall()
         connection.close()
-        return [ProductoFabricado(**r) for r in resultados]
+
+        # Calcular ganancia neta y porcentaje de rentabilidad
+        productos = []
+        for r in resultados:
+            ganancia_neta = (r['precio_venta'] - r['costo_total']) if r['costo_total'] is not None else 0
+            porcentaje_rentabilidad = (ganancia_neta * 100 / r['precio_venta']) if r['precio_venta'] > 0 else 0
+
+            producto = ProductoFabricado(
+                id=r['id'],
+                nombre=r['nombre'],
+                unidad_medida=r['unidad_medida'],
+                costo_total=r['costo_total'],
+                precio_venta=r['precio_venta'],
+                cantidad_producida=r['cantidad_producida'],
+                ganancia_neta=ganancia_neta,
+                porcentaje_rentabilidad=porcentaje_rentabilidad
+            )
+            productos.append(producto)
+
+        return productos
+
 
     @staticmethod
     def obtener_por_id(producto_id):
