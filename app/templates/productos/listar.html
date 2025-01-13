@@ -31,6 +31,8 @@
                 <th>Categoría</th>
                 <th>Precio</th>
                 <th>Precio de Compra</th>
+                <th>Ganancia Neta</th>
+                <th>Rentabilidad</th>
                 <th>Stock</th>
                 <th>Acciones</th>
             </tr>
@@ -42,6 +44,8 @@
                 <td>{{ producto.categoria_nombre }}</td>
                 <td>${{ producto.precio }}</td>
                 <td>${{ producto.precio_compra }}</td>
+                <td>${{ producto.ganancia_neta }}</td>
+                <td>{{ producto.rentabilidad }}</td>
                 <td>{{ producto.stock }}</td>
                 <td>
                     <button class="btn btn-warning btn-sm btn-editar" 
@@ -61,6 +65,7 @@
             {% endfor %}
         </tbody>
     </table>
+
 
 
     <!-- Modal Crear -->

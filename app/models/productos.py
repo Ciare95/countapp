@@ -2,13 +2,15 @@ from app.db import connection_pool
 
 
 class Producto:
-    def __init__(self, id=None, nombre=None, id_categorias=None, precio=None, cantidad=None, precio_compra=None):
+    def __init__(self, id=None, nombre=None, id_categorias=None, precio=None, cantidad=None, precio_compra=None, ganancia_neta=None, rentabilidad=None):
         self.id = id
         self.nombre = nombre
         self.id_categorias = id_categorias
         self.precio = precio
         self.precio_compra = precio_compra
         self.cantidad = cantidad
+        self.ganancia_neta = ganancia_neta,
+        self.rentabilidad = rentabilidad
         
     def formato_peso_colombiano(valor):
         if valor is None:
@@ -94,7 +96,12 @@ class Producto:
                     p.stock,
                     p.precio,
                     p.precio_compra,
-                    p.id_categorias as categoria_id
+                    p.id_categorias AS categoria_id,
+                    (p.precio - p.precio_compra) AS ganancia_neta,
+                    CASE 
+                        WHEN p.precio > 0 THEN ((p.precio - p.precio_compra) * 100 / p.precio)
+                        ELSE 0
+                    END AS rentabilidad
                 FROM 
                     productos p
                 LEFT JOIN 
@@ -117,7 +124,9 @@ class Producto:
                     'stock': resultado[3],
                     'precio': formato_peso_colombiano(resultado[4]),
                     'precio_compra': formato_peso_colombiano(resultado[5]),
-                    'categoria_id': resultado[6]
+                    'categoria_id': resultado[6],
+                    'ganancia_neta': formato_peso_colombiano(resultado[7]),
+                    'rentabilidad': f"{resultado[8]:.2f}%"  # Formateo a porcentaje
                 }
                 productos.append(producto)
             return productos

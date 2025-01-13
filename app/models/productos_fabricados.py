@@ -23,6 +23,9 @@ class ProductoFabricado:
     def costo_total_formateado(self):
         return self.formato_peso_colombiano(self.costo_total)
     
+    def ganancia_neta_formateado(self):
+        return self.formato_peso_colombiano(self.ganancia_neta)
+    
 
     @staticmethod
     def obtener_todos():
@@ -62,7 +65,24 @@ class ProductoFabricado:
             cursor.execute(query, (producto_id,))
             resultado = cursor.fetchone()
         connection.close()
-        return ProductoFabricado(**resultado) if resultado else None
+
+        if resultado:
+            # Calcular ganancia neta y porcentaje de rentabilidad
+            ganancia_neta = (resultado['precio_venta'] - resultado['costo_total']) if resultado['costo_total'] is not None else 0
+            porcentaje_rentabilidad = (ganancia_neta * 100 / resultado['precio_venta']) if resultado['precio_venta'] > 0 else 0
+
+            return ProductoFabricado(
+                id=resultado['id'],
+                nombre=resultado['nombre'],
+                unidad_medida=resultado['unidad_medida'],
+                costo_total=resultado['costo_total'],
+                precio_venta=resultado['precio_venta'],
+                cantidad_producida=resultado['cantidad_producida'],
+                ganancia_neta=ganancia_neta,
+                porcentaje_rentabilidad=porcentaje_rentabilidad
+            )
+        return None
+
 
 
     @staticmethod
