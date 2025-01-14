@@ -4,8 +4,22 @@ from app.models.ingredientes_productos import IngredienteProducto
 from app.models.ingrediente import Ingrediente
 from app.controllers.fabricante_utilidades_controller import convertir_unidad
 import decimal
+from app.db import connection_pool as db
 
 fabricante_ingredientes_bp = Blueprint('fabricante_ingredientes', __name__)
+
+def get_conversion_factor(unidad_origen, unidad_destino):
+    conversiones = {
+            'gramos': { 'kilos': 0.001, 'litros': 0.001, 'mililitros': 1, 'cc': 1, 'galon': 0.000264172, 'garrafa': 0.00005 },
+            'kilos': { 'gramos': 1000, 'litros': 1, 'mililitros': 1000, 'cc': 1000, 'galon': 0.264172, 'garrafa': 0.05 },
+            'litros': { 'gramos': 1000, 'kilos': 1, 'mililitros': 1000, 'cc': 1000, 'galon': 0.264172, 'garrafa': 0.05 },
+            'mililitros': { 'gramos': 1, 'kilos': 0.001, 'litros': 0.001, 'cc': 1, 'galon': 0.000264172, 'garrafa': 0.00005 },
+            'cc': { 'gramos': 1, 'kilos': 0.001, 'litros': 0.001, 'mililitros': 1, 'galon': 0.000264172, 'garrafa': 0.00005 },
+            'galon': { 'gramos': 4000, 'kilos': 4, 'litros': 4, 'mililitros': 4000, 'cc': 4000, 'garrafa': 0.2 },
+            'garrafa': { 'gramos': 20000, 'kilos': 20, 'litros': 20, 'mililitros': 20000, 'cc': 20000, 'galon': 5 }
+    }
+    return conversiones.get(unidad_origen, {}).get(unidad_destino, 1)
+
 
 
 
@@ -199,4 +213,124 @@ def editar():
             "success": False,
             "message": f"Error al actualizar: {str(e)}"
         }), 500
+        
+
+@fabricante_ingredientes_bp.route('/factura_ingredientes', methods=['GET'])
+def factura_ingredientes():
+    connection = db.get_connection()
+    with connection.cursor(dictionary=True) as cursor:
+        cursor.execute("SELECT id, nombre FROM proveedores")
+        proveedores = cursor.fetchall()
+        
+        cursor.execute("SELECT id, nombre FROM ingredientes")
+        ingredientes = cursor.fetchall()
+    connection.close()
+    
+    return render_template('fabricante/factura_ingredientes.html', 
+                         proveedores=proveedores,
+                         ingredientes=ingredientes)
+    
+
+@fabricante_ingredientes_bp.route('/crear_factura', methods=['POST'])
+def crear_factura():
+    try:
+        numero_factura = request.form['numero_factura']
+        id_proveedor = request.form['proveedor']
+        total = request.form['total']
+        
+        connection = db.get_connection()
+        with connection.cursor() as cursor:
+            # Crear la factura en facturas_fabricacion
+            query = """
+            INSERT INTO facturas_fabricacion (numero_factura, id_proveedor, total)
+            VALUES (%s, %s, %s)
+            """
+            cursor.execute(query, (numero_factura, id_proveedor, total))
+            id_factura = cursor.lastrowid
+            
+            connection.commit()
+        connection.close()
+        
+        return jsonify({'success': True, 'id_factura': id_factura})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    
+
+@fabricante_ingredientes_bp.route('/agregar_ingrediente_factura', methods=['POST'])
+def agregar_ingrediente_factura():
+    try:
+        connection = db.get_connection()
+        with connection.cursor() as cursor:
+            # Verificar que la factura existe
+            check_query = "SELECT id FROM facturas_fabricacion WHERE id = %s"
+            cursor.execute(check_query, (request.form['id_factura'],))
+            if not cursor.fetchone():
+                raise Exception("La factura no existe")
+            
+            # Insertar en ingredientes_factura
+            query = """
+            INSERT INTO ingredientes_factura 
+            (id_factura, id_ingrediente, cantidad, precio_unitario)
+            VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(query, (
+                request.form['id_factura'],
+                request.form['id_ingrediente'],
+                request.form['cantidad'],
+                request.form['precio_unitario']
+            ))
+            
+            # Obtener datos necesarios del ingrediente_producto
+            obtener_datos_query = """
+            SELECT unidad_medida, cantidad_ing, cantidad_factura
+            FROM ingredientes_producto
+            WHERE ingrediente_id = %s
+            """
+            cursor.execute(obtener_datos_query, (request.form['id_ingrediente'],))
+            resultado = cursor.fetchone()
+            if not resultado:
+                raise Exception("No se encontraron datos del ingrediente")
+            
+            unidad_medida, cantidad_ing, cantidad_factura = resultado
+            precio_unitario = float(request.form['precio_unitario'])
+            
+            # Convertir la cantidad del ingrediente a la unidad de la factura
+            factor_conversion = get_conversion_factor(unidad_medida, cantidad_factura)
+            cantidad_convertida = float(cantidad_ing) * factor_conversion
+            
+            if cantidad_convertida == 0:
+                raise Exception("Error en la conversión de unidades")
+            
+            # Calcular el costo por producto
+            costo_ing_por_producto = round(precio_unitario * cantidad_convertida, 2)
+            
+            # Actualizar costos en ingredientes_producto
+            update_query = """
+            UPDATE ingredientes_producto 
+            SET costo_factura = %s,
+                costo_ing_por_producto = %s
+            WHERE ingrediente_id = %s
+            """
+            cursor.execute(update_query, (
+                precio_unitario,
+                costo_ing_por_producto,
+                request.form['id_ingrediente']
+            ))
+            
+            connection.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Ingrediente agregado y costos actualizados correctamente',
+                'costo_calculado': costo_ing_por_producto
+            })
+            
+    except Exception as e:
+        if connection:
+            connection.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if connection:
+            connection.close()
+
 
