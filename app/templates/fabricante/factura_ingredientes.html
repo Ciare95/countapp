@@ -28,10 +28,10 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="total" class="form-label">Total:</label>
+                        <label for="factura_total" class="form-label">Total:</label>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="total" name="total" step="0.01" required>
+                            <input type="number" class="form-control" id="factura_total" name="total" step="0.01" required>
                         </div>
                     </div>
                 </div>
@@ -57,18 +57,18 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label for="ingrediente" class="form-label">Ingrediente:</label>
-                        <select class="form-select" id="ingrediente" name="id_ingrediente" required>
-                            <option value="">Seleccione un ingrediente</option>
-                            {% for ingrediente in ingredientes %}
-                            <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <select class="form-select" id="ingrediente" name="id_ingrediente" required>
+                                <option value="">Seleccione un ingrediente</option>
+                                {% for ingrediente in ingredientes %}
+                                    <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     
-                    <div class="col-md-4 mb-3">
-                        <label for="cantidad" class="form-label">Cantidad:</label>
-                        <input type="number" class="form-control" id="cantidad" name="cantidad" step="0.01" required>
-                    </div>
+                    
                     
                     <div class="col-md-4 mb-3">
                         <label for="precio_unitario" class="form-label">Precio Unitario:</label>
@@ -77,8 +77,33 @@
                             <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" step="0.01" required>
                         </div>
                     </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="cantidad" class="form-label">Cantidad:</label>
+                        <input type="number" class="form-control" id="cantidad" name="cantidad" step="0.01" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="unidad_medida" class="form-label">Unidad de Medida</label>
+                    <select name="unidad_medida" id="unidad_medida" class="form-control" required>
+                        <option value="gramos">Gramos</option>
+                        <option value="kilos">Kilos</option>
+                        <option value="litros">Litros</option>
+                        <option value="mililitros">Mililitros</option>
+                        <option value="cc">Centímetros cúbicos</option>
+                        <option value="galon">Galón</option>
+                        <option value="garrafa">Garrafa</option>
+                    </select>
                 </div>
                 
+                <div class="col-md-4 mb-3">
+                    <label for="ingrediente_total" class="form-label">Total:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="ingrediente_total" name="total" step="0.01" readonly>
+                    </div>
+                </div>
                 <div class="text-end">
                     <button type="submit" class="btn btn-success">
                         <i class="bi bi-plus-circle"></i> Agregar Ingrediente
@@ -89,7 +114,26 @@
     </div>
 </div>
 
+<!-- Incluir jQuery antes de Select2  -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Incluir el archivo JS de Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.full.min.js"></script>
+
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar Select2 para el campo de ingredientes
+        const ingredienteSelect = document.getElementById('ingrediente');
+        if (ingredienteSelect) {
+            // Usar la versión correcta de Select2 sin jQuery
+            $(ingredienteSelect).select2({
+                placeholder: "Seleccione un ingrediente", // Mensaje cuando no está seleccionado nada
+                allowClear: true, // Permitir la opción de limpiar la selección
+            });
+        }
+    });
+
+
     document.getElementById('facturaForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -121,17 +165,27 @@
         });
     });
 
+    // Función para calcular el total
+    function calculateTotal() {
+        const cantidad = parseFloat(document.getElementById('cantidad').value) || 0;
+        const precioUnitario = parseFloat(document.getElementById('precio_unitario').value) || 0;
+        const total = cantidad * precioUnitario;
+        
+        // Actualizar el campo total del ingrediente
+        document.getElementById('ingrediente_total').value = total.toFixed(2);
+    }
+
+    // Agregar event listeners para el cálculo automático
+    document.getElementById('cantidad').addEventListener('input', calculateTotal);
+    document.getElementById('precio_unitario').addEventListener('input', calculateTotal);
+
     document.getElementById('ingredienteForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         
-        for (const [key, value] of formData.entries()) {
-            console.log(key, value);
-        }
-       
         fetch('/fabricante_ingredientes/agregar_ingrediente_factura', {
             method: 'POST',
-            body: new FormData(this)
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
@@ -146,6 +200,9 @@
                 
                 // Remove the alert after 3 seconds
                 setTimeout(() => alert.remove(), 3000);
+                
+                // Reset the total field
+                document.getElementById('ingrediente_total').value = '';
             } else {
                 const alert = document.createElement('div');
                 alert.className = 'alert alert-danger';
@@ -154,7 +211,5 @@
             }
         });
     });
-    
-
 </script>
 {% endblock %}

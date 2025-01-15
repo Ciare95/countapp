@@ -3,6 +3,8 @@ from app.models.productos_fabricados import ProductoFabricado
 from app.models.ingredientes_productos import IngredienteProducto
 from app.models.ingrediente import Ingrediente
 from app.controllers.fabricante_utilidades_controller import convertir_unidad
+from app.models.facturas_fabricacion import FacturaFabricacion
+from app.models.ingredientes_factura import IngredienteFactura
 import decimal
 from app.db import connection_pool as db
 
@@ -267,17 +269,23 @@ def agregar_ingrediente_factura():
             if not cursor.fetchone():
                 raise Exception("La factura no existe")
             
+            # Calcular el total
+            cantidad = float(request.form['cantidad'])
+            precio_unitario = float(request.form['precio_unitario'])
+            total = round(cantidad * precio_unitario, 2)
+            
             # Insertar en ingredientes_factura
             query = """
             INSERT INTO ingredientes_factura 
-            (id_factura, id_ingrediente, cantidad, precio_unitario)
-            VALUES (%s, %s, %s, %s)
+            (id_factura, id_ingrediente, cantidad, precio_unitario, medida_ingrediente)
+            VALUES (%s, %s, %s, %s, %s)
             """
             cursor.execute(query, (
                 request.form['id_factura'],
                 request.form['id_ingrediente'],
                 request.form['cantidad'],
-                request.form['precio_unitario']
+                request.form['precio_unitario'],
+                request.form['unidad_medida']
             ))
             
             # Obtener datos necesarios del ingrediente_producto
@@ -292,9 +300,6 @@ def agregar_ingrediente_factura():
                 raise Exception("No se encontraron datos del ingrediente")
             
             unidad_medida, cantidad_ing, cantidad_factura = resultado
-            precio_unitario = float(request.form['precio_unitario'])
-            
-            # Convertir la cantidad del ingrediente a la unidad de la factura
             factor_conversion = get_conversion_factor(unidad_medida, cantidad_factura)
             cantidad_convertida = float(cantidad_ing) * factor_conversion
             
@@ -322,6 +327,7 @@ def agregar_ingrediente_factura():
             return jsonify({
                 'success': True,
                 'message': 'Ingrediente agregado y costos actualizados correctamente',
+                'total': total,
                 'costo_calculado': costo_ing_por_producto
             })
             
@@ -334,3 +340,24 @@ def agregar_ingrediente_factura():
             connection.close()
 
 
+
+@fabricante_ingredientes_bp.route('/mostrar_facturas')
+def mostrar_facturas():
+    try:
+        facturas = FacturaFabricacion.obtener_todos()
+        
+        return render_template('fabricante/listar_facturas.html', facturas=facturas)
+    except Exception as e:
+        print(f"Error: {e}")
+        return render_template('fabricante/listar_facturas.html', facturas=[], error="Error al cargar facturas")
+    
+    
+@fabricante_ingredientes_bp.route('/ver_factura/<int:id_factura>')
+def ver_factura(id_factura):
+    try:
+        ingredientes = IngredienteFactura.obtener_por_id(id_factura)
+        
+        return render_template('fabricante/ver_factura.html', ingredientes=ingredientes)
+    except Exception as e:
+        print(f"Error: {e}")
+        return render_template('fabricante/ver_factura.html', ingredientes=[], error="Error al cargar la factura")

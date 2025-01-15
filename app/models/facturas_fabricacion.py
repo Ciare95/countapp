@@ -1,10 +1,10 @@
 from app.db import connection_pool as db
 
 class FacturaFabricacion:
-    def __init__(self, id, numero_factura, proveedor_id, fecha, total):
+    def __init__(self, id, numero_factura, id_proveedor, fecha, total):
         self.id = id
         self.numero_factura = numero_factura
-        self.proveedor_id = proveedor_id
+        self.id_proveedor = id_proveedor
         self.fecha = fecha
         self.total = total
 
@@ -19,13 +19,13 @@ class FacturaFabricacion:
         return [FacturaFabricacion(**r) for r in resultados]
 
     @staticmethod
-    def crear(numero_factura, proveedor_id, fecha, total):
+    def crear(numero_factura, id_proveedor, fecha, total):
         query = """
-        INSERT INTO facturas_fabricacion (numero_factura, proveedor_id, fecha, total)
+        INSERT INTO facturas_fabricacion (numero_factura, id_proveedor, fecha, total)
         VALUES (%s, %s, %s, %s)
         """
         connection = db.get_connection()
         with connection.cursor() as cursor:
-            cursor.execute(query, (numero_factura, proveedor_id, fecha, total))
+            cursor.execute(query, (numero_factura, id_proveedor, fecha, total))
             connection.commit()
         connection.close()

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Detalle de Factura</h1>
+    
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% else %}
+        {% if ingredientes and ingredientes|length > 0 %}
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Ingrediente</th>
+                        <th>Precio Unitario</th>
+                        <th>Medida</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ingrediente in ingredientes %}
+                        <tr>
+                            <td>{{ ingrediente.id }}</td>
+                            <td>{{ ingrediente.nombre_ingrediente }}</td>
+                            <td>${{ ingrediente.cantidad }}</td>
+                            <td>{{ ingrediente.medida_ingrediente }}</td>
+                            <td>{{ ingrediente.precio_unitario | round(2) }}</td>
+                            <td>${{ ingrediente.subtotal | round(2) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                No se encontraron ingredientes registrados para esta factura.
+            </div>
+        {% endif %}
+    {% endif %}
+    
+    <div class="mt-4">
+        <a href="{{ url_for('fabricante_ingredientes.mostrar_facturas') }}" class="btn btn-secondary">Volver al listado</a>
+    </div>
+</div>
+
+{% endblock %}

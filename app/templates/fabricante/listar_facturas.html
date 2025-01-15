@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Listado de Facturas de Fabricación</h1>
+    
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% else %}
+        {% if facturas and facturas|length > 0 %}
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Número de Factura</th>
+                        <th>Proveedor</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for factura in facturas %}
+                        <tr>
+                            <td>{{ factura.id }}</td>
+                            <td>{{ factura.numero_factura }}</td>
+                            <td>{{ factura.id_proveedor }}</td>
+                            <td>{{ factura.fecha }}</td>
+                            <td>${{ factura.total | round(2) }}</td>
+                            
+                            <td>
+                                <a href="/fabricante_ingredientes/ver_factura/{{ factura.id }}" class="btn btn-primary btn-sm">
+                                    Ver
+                                </a>
+                                <!--
+                                <a href="/fabricante_ingredientes/editar_factura/{{ factura.id }}" class="btn btn-warning btn-sm">
+                                    Editar
+                                </a>
+                                <a href="/fabricante_ingredientes/eliminar_factura/{{ factura.id }}" 
+                                class="btn btn-danger btn-sm" 
+                                onclick="return confirm('¿Estás seguro de que deseas eliminar esta factura?');">
+                                    Eliminar
+                                </a> 
+                                -->
+                            </td>
+                            
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                No se encontraron facturas registradas.
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

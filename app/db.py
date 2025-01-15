@@ -65,7 +65,7 @@ def create_pool():
         # Crear el pool con configuración mínima primero
         pool = mysql.connector.pooling.MySQLConnectionPool(
             pool_name="mypool",
-            pool_size=5,
+            pool_size=10,
             host=dbconfig['host'],
             user=dbconfig['user'],
             password=dbconfig['password'],
