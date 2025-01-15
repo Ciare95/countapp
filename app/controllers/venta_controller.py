@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, render_template, flash, make_response
 from flask_login import current_user
+from app.models.abonos import AbonoModel
 import pdfkit
 from app.db import connection_pool
 
@@ -19,6 +20,7 @@ def crear_venta():
     id_cliente = data.get('id_cliente')
     estado = data.get('estado', 'pendiente')
     saldo = total if estado != 'cancelada' else 0
+    monto_abono = float(data.get('monto_abono', 0))
 
     # Obtener el ID del usuario actual
     id_usuario = current_user.id if hasattr(current_user, 'id') else data.get('id_usuario')
@@ -62,6 +64,13 @@ def crear_venta():
         for producto in productos:
             id_producto = producto['id']
             cantidad = producto['cantidad']
+            
+        # Registrar abono inicial si el monto es mayor a 0
+        if monto_abono > 0:
+            AbonoModel.registrar_abono(id_venta, monto_abono)
+            nuevo_saldo = saldo - monto_abono
+            nuevo_estado = 'cancelada' if nuevo_saldo == 0 else 'pendiente'
+            AbonoModel.actualizar_saldo(id_venta, nuevo_saldo, nuevo_estado)
 
             # Verifica el stock
             cursor.execute("SELECT stock FROM productos WHERE id = %s", (id_producto,))

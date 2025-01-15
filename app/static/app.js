@@ -136,8 +136,9 @@ function actualizarCantidad(event) {
 document.getElementById('crearVenta').addEventListener('click', async () => {
     const clienteId = Number(document.getElementById('cliente-select').value);
     const estado = document.getElementById('estado-input').value;
+    const montoAbono = parseFloat(document.getElementById('monto-abono').value) || 0;
     const total = carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
-    const saldo = total;
+    const saldo = total - montoAbono;
 
     if (!clienteId || clienteId === '') {
         showFlashMessage('Por favor, selecciona un cliente', 'danger');
@@ -146,6 +147,11 @@ document.getElementById('crearVenta').addEventListener('click', async () => {
 
     if (carrito.length === 0) {
         showFlashMessage('Por favor, selecciona productos antes de crear la venta', 'danger');
+        return;
+    }
+
+    if (montoAbono > total) {
+        showFlashMessage('El abono no puede exceder el total de la venta', 'danger');
         return;
     }
 
@@ -161,6 +167,7 @@ document.getElementById('crearVenta').addEventListener('click', async () => {
                 total: total,
                 estado: estado,
                 saldo: saldo,
+                monto_abono: montoAbono, // Agregar el abono inicial
             })
         });
 
@@ -179,8 +186,8 @@ document.getElementById('crearVenta').addEventListener('click', async () => {
             document.getElementById('producto').value = '';
             document.getElementById('cliente-select').value = '';
             document.getElementById('estado-input').value = 'pendiente';
+            document.getElementById('monto-abono').value = '';
 
-            // Opcional: Puedes mostrar el ID de la venta creada
             console.log('Venta creada con ID:', data.id_venta);
         }
 
@@ -188,6 +195,7 @@ document.getElementById('crearVenta').addEventListener('click', async () => {
         showFlashMessage(error.message, 'danger');
     }
 });
+
 
 
 // Cargar clientes al iniciar
