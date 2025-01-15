@@ -1,5 +1,4 @@
 from flask import Flask, redirect, url_for, render_template, session, request
-import os
 
 
 from app.controllers import (
@@ -15,15 +14,7 @@ def create_app():
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'Ciarentcity2'
 
-    # Configuración de la base de datos desde variables de entorno
-    app.config['MYSQL_HOST'] = os.getenv('DB_HOST', 'localhost')
-    app.config['MYSQL_USER'] = os.getenv('DB_USER', 'root')
-    app.config['MYSQL_PASSWORD'] = os.getenv('DB_PASSWORD', '')
-    app.config['MYSQL_DB'] = os.getenv('DB_NAME', 'nombre_db')
-
-    if __name__ == '__main__':
-        port = int(os.environ.get('PORT', 5000))
-        app.run(host='0.0.0.0', port=port)
+   
     
     # Configuración del Login Manager
     login_manager = LoginManager()
