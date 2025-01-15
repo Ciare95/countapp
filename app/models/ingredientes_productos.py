@@ -2,7 +2,7 @@ from app.db import connection_pool as db
 import decimal
 
 class IngredienteProducto:
-    def __init__(self, id, producto_id, ingrediente_id, unidad_medida, cantidad_ing, cantidad_factura, costo_factura=None, costo_unitario=None, unidad_cantidad=None, cantidad_original=None, unidad_original=None, costo_ing_por_producto=None):
+    def __init__(self, id, producto_id, ingrediente_id, unidad_medida, cantidad_ing, cantidad_factura, costo_factura=None, costo_unitario=None, unidad_cantidad=None, cantidad_original=None, unidad_original=None, costo_ing_por_producto=None, costo_empaque=None):
         self.id = id
         self.producto_id = producto_id
         self.ingrediente_id = ingrediente_id
@@ -15,6 +15,7 @@ class IngredienteProducto:
         self.unidad_medida = unidad_medida
         self.cantidad_ing = cantidad_ing
         self.cantidad_factura = cantidad_factura
+        self.costo_empaque = costo_empaque
         
 
 

@@ -19,10 +19,10 @@
                 <td>{{ ingrediente.id }}</td>
                 <td>{{ ingrediente.nombre }}</td>
                 <td>{{ ingrediente.descripcion }}</td>
-                <td>
-                    <a href="{{ url_for('fabricante_ingredientes.editar_ingrediente', id=ingrediente.id) }}" class="btn btn-warning btn-sm">Editar</a>
+                <td class="bg-dark text-white"> 
+                    <a href="{{ url_for('fabricante_ingredientes.editar_ingrediente', id=ingrediente.id) }}" class="btn text-white hover-effect">Editar</a>
                     <form action="{{ url_for('fabricante_ingredientes.eliminar_ingrediente', id=ingrediente.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este ingrediente?');">
-                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                        <button type="submit" class="btn text-white hover-effect">Eliminar</button>
                     </form>
                 </td>
             </tr>
