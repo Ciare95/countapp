@@ -28,7 +28,7 @@ def listar_proveedores():
 @proveedor_bp.route('/crear', methods=['POST'])
 def crear_proveedor():
     try:
-        data = request.form  # Cambiado a `request.form` para usar con formularios HTML
+        data = request.json  #Recibe en formato json
         nombre = data.get('nombre')
         nit = data.get('nit')
         telefono = data.get('telefono')

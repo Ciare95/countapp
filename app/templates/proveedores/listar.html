@@ -130,7 +130,7 @@
                 const response = await fetch('/proveedores/crear', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, nit, telefono })
+                    body: JSON.stringify({ nombre, nit, telefono })  //se envía en formato json
                 });
 
                 if (response.ok) {
@@ -195,6 +195,11 @@
                 console.error('Error al eliminar el proveedor:', error);
             }
         }
+
+        document.getElementById('btn-crear').addEventListener('click', function () {
+            abrirModal('modal-crear');
+        });
+
 
         // Función para abrir un modal
         function abrirModal(modalId) {
