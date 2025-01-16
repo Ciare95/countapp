@@ -3,6 +3,27 @@
 {% block content %}
 <div class="container mt-4">
     <h1 class="text-center mb-4">Productos Fabricados</h1>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- Card de Rentabilidad Total -->
+        <div class="card bg-light" style="max-width: 18rem;">
+            <div class="card-body">
+                <h5 class="card-title">Rentabilidad Total</h5>
+                <p class="card-text text-primary" id="rentabilidad-total">Porcentaje de Rentabilidad Total: </p>
+            </div>
+        </div>
+    
+        <!-- Buscador -->
+        <div class="ms-3" style="flex: 1;">
+            <form method="GET" action="{{ url_for('fabricante_productos.listar_productos') }}">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar producto..." value="{{ request.args.get('q', '') }}">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     
     <!-- Botones de acciones principales -->
     <div class="d-flex justify-content-end gap-2 mb-3">
@@ -53,5 +74,27 @@
             {% endfor %}
         </tbody>
     </table>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let rentabilidades = [];
+            document.querySelectorAll("tbody tr").forEach(row => {
+                const rentabilidadCell = row.querySelector("td:nth-child(7)"); // Columna de % Rentabilidad
+                if (rentabilidadCell) {
+                    const rentabilidad = parseFloat(rentabilidadCell.textContent.replace('%', '')) || 0;
+                    rentabilidades.push(rentabilidad);
+                }
+            });
+
+            if (rentabilidades.length > 0) {
+                const promedio = rentabilidades.reduce((a, b) => a + b, 0) / rentabilidades.length;
+                const promedioFormateado = promedio.toFixed(2) + '%';
+
+                // Mostrar el promedio en el lugar correspondiente
+                const rentabilidadTotalDiv = document.getElementById("rentabilidad-total");
+                rentabilidadTotalDiv.textContent = `Porcentaje de Rentabilidad Total: ${promedioFormateado}`;
+            }
+        });
+    </script>
+    
 </div>
 {% endblock %}
