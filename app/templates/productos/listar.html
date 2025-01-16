@@ -8,6 +8,20 @@
         <h1>Listado de productos</h1>
         <button id="btn-crear" class="btn btn-success">Crear Producto</button>
     </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" 
+                       id="buscador" 
+                       class="form-control" 
+                       placeholder="Buscar por nombre de producto o categoría...">
+            </div>
+        </div>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -29,8 +43,8 @@
             <tr>
                 <th>Producto</th>
                 <th>Categoría</th>
-                <th>Precio</th>
                 <th>Precio de Compra</th>
+                <th>Precio de Venta</th>              
                 <th>Ganancia Neta</th>
                 <th>Rentabilidad</th>
                 <th>Stock</th>
@@ -42,8 +56,8 @@
             <tr>
                 <td>{{ producto.producto_nombre }}</td>
                 <td>{{ producto.categoria_nombre }}</td>
-                <td>${{ producto.precio }}</td>
                 <td>${{ producto.precio_compra }}</td>
+                <td>${{ producto.precio }}</td>
                 <td>${{ producto.ganancia_neta }}</td>
                 <td>{{ producto.rentabilidad }}</td>
                 <td>{{ producto.stock }}</td>
@@ -301,6 +315,40 @@
                 message.classList.add('fade');
                 setTimeout(() => message.remove(), 300); // Remover después de la transición
             }, 3000); // 3 segundos
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const buscador = document.getElementById('buscador');
+            const tabla = document.querySelector('table tbody');
+            const filas = tabla.getElementsByTagName('tr');
+
+            buscador.addEventListener('keyup', function() {
+                const termino = buscador.value.toLowerCase().trim();
+
+                for (let fila of filas) {
+                    const nombreProducto = fila.cells[0].textContent.toLowerCase();
+                    const categoria = fila.cells[1].textContent.toLowerCase();
+                    
+                    if (nombreProducto.includes(termino) || categoria.includes(termino)) {
+                        fila.style.display = '';
+                    } else {
+                        fila.style.display = 'none';
+                    }
+                }
+            });
+
+            // Función para limpiar el buscador
+            function limpiarBuscador() {
+                buscador.value = '';
+                for (let fila of filas) {
+                    fila.style.display = '';
+                }
+            }
+
+            // Opcional: Agregar botón para limpiar la búsqueda
+            buscador.insertAdjacentHTML('afterend', 
+                '<button class="btn btn-outline-secondary" type="button" id="limpiar-busqueda">Limpiar</button>');
+            
+            document.getElementById('limpiar-busqueda').addEventListener('click', limpiarBuscador);
         });
     </script>
     

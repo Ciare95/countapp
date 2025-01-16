@@ -361,3 +361,61 @@ def ver_factura(id_factura):
     except Exception as e:
         print(f"Error: {e}")
         return render_template('fabricante/ver_factura.html', ingredientes=[], error="Error al cargar la factura")
+    
+    
+@fabricante_ingredientes_bp.route('/editar_factura/<int:factura_id>')
+def editar_factura(factura_id):
+    try:
+        # Obtener la factura
+        connection = db.get_connection()
+        with connection.cursor(dictionary=True) as cursor:
+            # Obtener datos de la factura
+            cursor.execute("""
+                SELECT id, fecha, numero_factura, id_proveedor 
+                FROM facturas_fabricacion 
+                WHERE id = %s
+            """, (factura_id,))
+            factura = cursor.fetchone()
+            
+            if not factura:
+                flash('Factura no encontrada', 'error')
+                return redirect(url_for('fabricante_ingredientes.mostrar_facturas'))
+
+            # Obtener ingredientes de la factura
+            ingredientes = IngredienteFactura.obtener_por_id(factura_id)
+            
+            # Obtener todos los ingredientes disponibles
+            ingredientes_disponibles = Ingrediente.obtener_todos()
+
+            return render_template('fabricante/editar_factura.html',
+                               factura=factura,
+                               ingredientes=ingredientes,
+                               todos_ingredientes=ingredientes_disponibles,
+                               editing=True)
+    
+    except Exception as e:
+        flash(f'Error al cargar la factura: {str(e)}', 'error')
+        return redirect(url_for('fabricante_ingredientes.mostrar_facturas'))
+    finally:
+        connection.close()
+    
+
+@fabricante_ingredientes_bp.route('/eliminar_ingrediente_factura/<int:ingrediente_id>', methods=['POST'])
+def eliminar_ingrediente_factura(ingrediente_id):
+    try:
+        connection = db.get_connection()
+        with connection.cursor() as cursor:
+            # Eliminar el ingrediente de la factura
+            query = "DELETE FROM ingredientes_factura WHERE id = %s"
+            cursor.execute(query, (ingrediente_id,))
+            connection.commit()
+            
+            return jsonify({'success': True})
+            
+    except Exception as e:
+        if connection:
+            connection.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if connection:
+            connection.close()

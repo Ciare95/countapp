@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Editar Factura #{{ factura.id }}</h1>
+        <div>
+            <a href="{{ url_for('fabricante_ingredientes.mostrar_facturas') }}" class="btn btn-secondary">Volver</a>
+        </div>
+    </div>
+
+    <!-- Detalles de la factura -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Información de la Factura</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Número:</strong> {{ factura.numero_factura }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Fecha:</strong> {{ factura.fecha.strftime('%d/%m/%Y') }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Proveedor:</strong> {{ factura.id_proveedor }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agregar nuevo ingrediente -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Agregar Ingrediente</h5>
+            <form id="agregarIngredienteForm" class="row g-3">
+                <input type="hidden" name="id_factura" value="{{ factura.id }}">
+                
+                <div class="col-md-3">
+                    <label for="id_ingrediente" class="form-label">Ingrediente</label>
+                    <select class="form-select" id="id_ingrediente" name="id_ingrediente" required>
+                        <option value="">Seleccione...</option>
+                        {% for ingrediente in todos_ingredientes %}
+                        <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="cantidad" class="form-label">Cantidad</label>
+                    <input type="number" class="form-control" id="cantidad" name="cantidad" step="0.01" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="unidad_medida" class="form-label">Unidad de Medida</label>
+                    <select class="form-select" id="unidad_medida" name="unidad_medida" required>
+                        <option value="gramos">Gramos</option>
+                        <option value="kilos">Kilos</option>
+                        <option value="unidades">Unidades</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="precio_unitario" class="form-label">Precio Unitario</label>
+                    <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" step="0.01" required>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary w-100" onclick="agregarIngrediente()">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de ingredientes -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Ingredientes en la Factura</h5>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ingredientes-tabla">
+                        {% for ingrediente in ingredientes %}
+                        <tr>
+                            <td>{{ ingrediente.nombre_ingrediente }}</td>
+                            <td>{{ ingrediente.cantidad }}</td>
+                            <td>{{ ingrediente.medida_ingrediente }}</td>
+                            <td>${{ "{:,.2f}".format(ingrediente.precio_unitario) }}</td>
+                            <td>${{ "{:,.2f}".format(ingrediente.subtotal) }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" 
+                                        data-ingrediente-id="{{ ingrediente.id }}"
+                                        onclick="eliminarIngrediente(this)">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function agregarIngrediente() {
+    const form = document.getElementById('agregarIngredienteForm');
+    const formData = new FormData(form);
+
+    fetch('{{ url_for("fabricante_ingredientes.agregar_ingrediente_factura") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar la tabla
+            const tabla = document.getElementById('ingredientes-tabla');
+            const newRow = tabla.insertRow();
+            const ingredienteSelect = document.getElementById('id_ingrediente');
+            const nombreIngrediente = ingredienteSelect.options[ingredienteSelect.selectedIndex].text;
+            const cantidad = formData.get('cantidad');
+            const precioUnitario = formData.get('precio_unitario');
+            const subtotal = (cantidad * precioUnitario).toFixed(2);
+            
+            newRow.innerHTML = `
+                <td>${nombreIngrediente}</td>
+                <td>${cantidad}</td>
+                <td>${formData.get('unidad_medida')}</td>
+                <td>$${parseFloat(precioUnitario).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                <td>$${parseFloat(subtotal).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarIngrediente(${data.id})">
+                        Eliminar
+                    </button>
+                </td>
+            `;
+            
+            // Limpiar el formulario
+            form.reset();
+            
+            // Mostrar mensaje de éxito
+            alert('Ingrediente agregado correctamente');
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar el ingrediente');
+    });
+}
+
+function eliminarIngrediente(boton) {
+    const ingredienteId = boton.dataset.ingredienteId;
+    
+    if (confirm('¿Está seguro de eliminar este ingrediente de la factura?')) {
+        fetch(`/fabricante/ingredientes/eliminar/${ingredienteId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                boton.closest('tr').remove();
+                alert('Ingrediente eliminado correctamente');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el ingrediente');
+        });
+    }
+}
+</script>
+{% endblock %}

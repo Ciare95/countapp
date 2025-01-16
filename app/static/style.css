@@ -55,3 +55,25 @@
     float: right;
     cursor: pointer;
 }
+
+.input-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.input-group-text {
+    background-color: white;
+    border-right: none;
+}
+
+#buscador {
+    border-left: none;
+}
+
+#buscador:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+}
+
+tr.oculto {
+    display: none;
+}

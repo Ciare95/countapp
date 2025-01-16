@@ -10,7 +10,7 @@ class FacturaFabricacion:
 
     @staticmethod
     def obtener_todos():
-        query = "SELECT * FROM facturas_fabricacion"
+        query = "SELECT * FROM facturas_fabricacion ORDER BY id DESC"
         connection = db.get_connection()
         with connection.cursor(dictionary=True) as cursor:
             cursor.execute(query)

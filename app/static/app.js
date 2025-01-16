@@ -91,12 +91,25 @@ function seleccionarProducto(producto) {
     actualizarTabla();
 }
 
-// Actualizar la tabla del carrito
 function actualizarTabla() {
     const tbody = document.getElementById('productos-tabla');
-    tbody.innerHTML = '';
+    tbody.innerHTML = ''; // Limpiar la tabla
     let total = 0;
 
+    // Verificar si el carrito está vacío
+    if (carrito.length === 0) {
+        const noProductosRow = document.createElement('tr');
+        const noProductosCell = document.createElement('td');
+        noProductosCell.setAttribute('colspan', '5');
+        noProductosCell.classList.add('text-center');
+        noProductosCell.innerText = 'No hay productos en la tabla';
+        noProductosRow.appendChild(noProductosCell);
+        tbody.appendChild(noProductosRow);
+        document.getElementById('precioTotal').value = "$ 0.00"; // Resetear el precio total
+        return; // Salir de la función si el carrito está vacío
+    }
+
+    // Si hay productos en el carrito, agregar las filas a la tabla
     carrito.forEach((item, index) => {
         const subtotal = item.precio * item.cantidad;
         const tr = document.createElement('tr');
@@ -117,13 +130,28 @@ function actualizarTabla() {
         total += subtotal;
     });
 
+    // Actualizar el precio total
     document.getElementById('precioTotal').value = `$ ${formatoPesoColombianoJS(total)}`;
 }
 
-function eliminarProducto(index) {
-    carrito.splice(index, 1);
-    actualizarTabla();
+// Después de insertar los productos en la tabla con JavaScript
+let productosTabla = document.getElementById("productos-tabla");
+if (productosTabla.rows.length === 0) {
+    let noProductosRow = document.createElement("tr");
+    let noProductosCell = document.createElement("td");
+    noProductosCell.setAttribute("colspan", "5");
+    noProductosCell.classList.add("text-center");
+    noProductosCell.innerText = "No hay productos en la tabla";
+    noProductosRow.appendChild(noProductosCell);
+    productosTabla.appendChild(noProductosRow);
 }
+
+
+function eliminarProducto(index) {
+    carrito.splice(index, 1); // Eliminar el producto del carrito
+    actualizarTabla(); // Actualizar la tabla después de eliminar el producto
+}
+
 
 function actualizarCantidad(event) {
     const input = event.target;
