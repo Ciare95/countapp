@@ -3,6 +3,10 @@
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Detalle de Factura</h1>
+
+    <div class="mt-4 mb-4">
+        <a href="{{ url_for('fabricante_ingredientes.mostrar_facturas') }}" class="btn btn-secondary">Volver al listado</a>
+    </div>
     
     {% if error %}
         <div class="alert alert-danger" role="alert">
@@ -15,9 +19,9 @@
                     <tr>
                         <th>ID</th>
                         <th>Nombre del Ingrediente</th>
-                        <th>Precio Unitario</th>
-                        <th>Medida</th>
                         <th>Cantidad</th>
+                        <th>Medida</th>
+                        <th>Precio Unitario</th>
                         <th>Subtotal</th>
                     </tr>
                 </thead>
@@ -26,9 +30,9 @@
                         <tr>
                             <td>{{ ingrediente.id }}</td>
                             <td>{{ ingrediente.nombre_ingrediente }}</td>
-                            <td>${{ ingrediente.cantidad }}</td>
+                            <td>{{ ingrediente.cantidad }}</td>
                             <td>{{ ingrediente.medida_ingrediente }}</td>
-                            <td>{{ ingrediente.precio_unitario | round(2) }}</td>
+                            <td>${{ ingrediente.precio_unitario | round(2) }}</td>
                             <td>${{ ingrediente.subtotal | round(2) }}</td>
                         </tr>
                     {% endfor %}
@@ -41,8 +45,10 @@
         {% endif %}
     {% endif %}
     
-    <div class="mt-4">
-        <a href="{{ url_for('fabricante_ingredientes.mostrar_facturas') }}" class="btn btn-secondary">Volver al listado</a>
+    <div>
+        {% if ingredientes and ingredientes|length > 0 %}
+            <h3 class="mt-4">Total: ${{ ingredientes | sum(attribute='subtotal') | round(2) }}</h3>
+        {% endif %}
     </div>
 </div>
 

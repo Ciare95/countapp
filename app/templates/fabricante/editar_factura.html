@@ -105,81 +105,239 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <div class="d-flex justify-content-end">
+                    <h5>Total: $<span id="total-subtotal">0.00</span></h5>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-function agregarIngrediente() {
-    const form = document.getElementById('agregarIngredienteForm');
-    const formData = new FormData(form);
+    // Función para actualizar totales
+    function actualizarTotales() {
+        const filas = document.querySelectorAll('#ingredientes-tabla tr');
+        let total = 0;
 
-    fetch('{{ url_for("fabricante_ingredientes.agregar_ingrediente_factura") }}', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Actualizar la tabla
-            const tabla = document.getElementById('ingredientes-tabla');
-            const newRow = tabla.insertRow();
-            const ingredienteSelect = document.getElementById('id_ingrediente');
-            const nombreIngrediente = ingredienteSelect.options[ingredienteSelect.selectedIndex].text;
-            const cantidad = formData.get('cantidad');
-            const precioUnitario = formData.get('precio_unitario');
-            const subtotal = (cantidad * precioUnitario).toFixed(2);
-            
-            newRow.innerHTML = `
-                <td>${nombreIngrediente}</td>
-                <td>${cantidad}</td>
-                <td>${formData.get('unidad_medida')}</td>
-                <td>$${parseFloat(precioUnitario).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
-                <td>$${parseFloat(subtotal).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
-                <td>
-                    <button class="btn btn-danger btn-sm" onclick="eliminarIngrediente(${data.id})">
-                        Eliminar
-                    </button>
-                </td>
-            `;
-            
-            // Limpiar el formulario
-            form.reset();
-            
-            // Mostrar mensaje de éxito
-            alert('Ingrediente agregado correctamente');
-        } else {
-            alert('Error: ' + data.error);
+        filas.forEach(fila => {
+            const subtotalCell = fila.querySelector('td:nth-child(5)');
+            if (subtotalCell) {
+                // Limpia el texto de caracteres no numéricos y convierte a número
+                const subtotal = parseFloat(subtotalCell.textContent.replace(/[^\d.-]/g, '')) || 0;
+                total += subtotal;
+            }
+        });
+
+        // Actualiza el total en el DOM con formato de moneda
+        const totalSpan = document.getElementById('total-subtotal');
+        if (totalSpan) {
+            totalSpan.textContent = total.toLocaleString('es-CO', { 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al agregar el ingrediente');
-    });
-}
+    }
 
-function eliminarIngrediente(boton) {
-    const ingredienteId = boton.dataset.ingredienteId;
-    
-    if (confirm('¿Está seguro de eliminar este ingrediente de la factura?')) {
-        fetch(`/fabricante/ingredientes/eliminar/${ingredienteId}`, {
-            method: 'POST'
+    // Llamar a actualizarTotales cuando se carga la página
+    document.addEventListener('DOMContentLoaded', actualizarTotales);
+
+    function agregarIngrediente() {
+        const form = document.getElementById('agregarIngredienteForm');
+        const formData = new FormData(form);
+
+        // Validaciones básicas antes de enviar
+        const ingredienteSelect = document.getElementById('id_ingrediente');
+        if (!ingredienteSelect.value) {
+            alert('Por favor seleccione un ingrediente');
+            return;
+        }
+
+        const cantidad = formData.get('cantidad');
+        const precioUnitario = formData.get('precio_unitario');
+
+        if (!cantidad || cantidad <= 0) {
+            alert('Por favor ingrese una cantidad válida');
+            return;
+        }
+
+        if (!precioUnitario || precioUnitario <= 0) {
+            alert('Por favor ingrese un precio unitario válido');
+            return;
+        }
+
+        // Mostrar indicador de carga
+        const btnAgregar = form.querySelector('button[type="button"]');
+        const btnTextoOriginal = btnAgregar.innerHTML;
+        btnAgregar.disabled = true;
+        btnAgregar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Agregando...';
+
+        fetch('{{ url_for("fabricante_ingredientes.agregar_ingrediente_factura") }}', {
+            method: 'POST',
+            body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                boton.closest('tr').remove();
-                alert('Ingrediente eliminado correctamente');
+                // Actualizar la tabla
+                const tabla = document.getElementById('ingredientes-tabla');
+                const tbody = tabla.getElementsByTagName('tbody')[0] || tabla;
+                const newRow = tbody.insertRow();
+                const nombreIngrediente = ingredienteSelect.options[ingredienteSelect.selectedIndex].text;
+                const subtotal = (cantidad * precioUnitario).toFixed(2);
+
+                newRow.innerHTML = `
+                    <td>${nombreIngrediente}</td>
+                    <td>${parseFloat(cantidad).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>${formData.get('unidad_medida')}</td>
+                    <td>$${parseFloat(precioUnitario).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>$${parseFloat(subtotal).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" 
+                                onclick="eliminarIngrediente(this)" 
+                                data-ingrediente-id="${data.id}">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                `;
+
+                // Limpiar el formulario
+                form.reset();
+
+                // Actualizar totales después de agregar
+                actualizarTotales();
+
+                // Mostrar mensaje de éxito usando SweetAlert2 o alert normal
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        text: 'Ingrediente agregado correctamente',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    alert('Ingrediente agregado correctamente');
+                }
             } else {
-                alert('Error: ' + data.error);
+                throw new Error(data.error || 'Error al agregar el ingrediente');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al eliminar el ingrediente');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Error al agregar el ingrediente'
+                });
+            } else {
+                alert('Error: ' + (error.message || 'Error al agregar el ingrediente'));
+            }
+        })
+        .finally(() => {
+            // Restaurar el botón
+            btnAgregar.disabled = false;
+            btnAgregar.innerHTML = btnTextoOriginal;
         });
     }
-}
-</script>
+
+    function eliminarIngrediente(boton) {
+        const ingredienteId = boton.dataset.ingredienteId;
+
+        if (!ingredienteId) {
+            console.error('ID de ingrediente no encontrado');
+            return;
+        }
+
+        const confirmarEliminacion = () => {
+            // Mostrar indicador de carga en el botón
+            const btnTextoOriginal = boton.innerHTML;
+            boton.disabled = true;
+            boton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+            fetch(`/fabricante_ingredientes/eliminar_ingrediente_factura/${ingredienteId}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Eliminar la fila con animación
+                    const row = boton.closest('tr');
+                    row.style.transition = 'all 0.3s';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        // Actualizar totales después de eliminar
+                        actualizarTotales();
+                    }, 300);
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Éxito',
+                            text: 'Ingrediente eliminado correctamente',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        alert('Ingrediente eliminado correctamente');
+                    }
+                } else {
+                    throw new Error(data.error || 'Error al eliminar el ingrediente');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Error al eliminar el ingrediente'
+                    });
+                } else {
+                    alert('Error: ' + (error.message || 'Error al eliminar el ingrediente'));
+                }
+            })
+            .finally(() => {
+                // Restaurar el botón
+                boton.disabled = false;
+                boton.innerHTML = btnTextoOriginal;
+            });
+        };
+
+        // Confirmación antes de eliminar
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "¿Desea eliminar este ingrediente de la factura?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmarEliminacion();
+                }
+            });
+        } else if (confirm('¿Está seguro de eliminar este ingrediente de la factura?')) {
+            confirmarEliminacion();
+        }
+    }
+
+    </script>
 {% endblock %}

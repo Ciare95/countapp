@@ -260,21 +260,18 @@ def crear_factura():
 
 @fabricante_ingredientes_bp.route('/agregar_ingrediente_factura', methods=['POST'])
 def agregar_ingrediente_factura():
+    connection = None
     try:
         connection = db.get_connection()
         with connection.cursor() as cursor:
-            # Verificar que la factura existe
             check_query = "SELECT id FROM facturas_fabricacion WHERE id = %s"
             cursor.execute(check_query, (request.form['id_factura'],))
             if not cursor.fetchone():
                 raise Exception("La factura no existe")
             
-            # Calcular el total
             cantidad = float(request.form['cantidad'])
             precio_unitario = float(request.form['precio_unitario'])
-            total = round(cantidad * precio_unitario, 2)
             
-            # Insertar en ingredientes_factura
             query = """
             INSERT INTO ingredientes_factura 
             (id_factura, id_ingrediente, cantidad, precio_unitario, medida_ingrediente)
@@ -283,52 +280,40 @@ def agregar_ingrediente_factura():
             cursor.execute(query, (
                 request.form['id_factura'],
                 request.form['id_ingrediente'],
-                request.form['cantidad'],
-                request.form['precio_unitario'],
+                cantidad,
+                precio_unitario,
                 request.form['unidad_medida']
             ))
             
-            # Obtener datos necesarios del ingrediente_producto
-            obtener_datos_query = """
-            SELECT unidad_medida, cantidad_ing, cantidad_factura
-            FROM ingredientes_producto
-            WHERE ingrediente_id = %s
+            inserted_id = cursor.lastrowid
+            
+            # Get the generated subtotal
+            get_subtotal_query = "SELECT subtotal FROM ingredientes_factura WHERE id = %s"
+            cursor.execute(get_subtotal_query, (inserted_id,))
+            subtotal = cursor.fetchone()[0]
+            
+            update_total_query = """
+            UPDATE facturas_fabricacion 
+            SET total = COALESCE((
+                SELECT SUM(subtotal) 
+                FROM ingredientes_factura 
+                WHERE id_factura = %s
+            ), 0)
+            WHERE id = %s
             """
-            cursor.execute(obtener_datos_query, (request.form['id_ingrediente'],))
-            resultado = cursor.fetchone()
-            if not resultado:
-                raise Exception("No se encontraron datos del ingrediente")
-            
-            unidad_medida, cantidad_ing, cantidad_factura = resultado
-            factor_conversion = get_conversion_factor(unidad_medida, cantidad_factura)
-            cantidad_convertida = float(cantidad_ing) * factor_conversion
-            
-            if cantidad_convertida == 0:
-                raise Exception("Error en la conversión de unidades")
-            
-            # Calcular el costo por producto
-            costo_ing_por_producto = round(precio_unitario * cantidad_convertida, 2)
-            
-            # Actualizar costos en ingredientes_producto
-            update_query = """
-            UPDATE ingredientes_producto 
-            SET costo_factura = %s,
-                costo_ing_por_producto = %s
-            WHERE ingrediente_id = %s
-            """
-            cursor.execute(update_query, (
-                precio_unitario,
-                costo_ing_por_producto,
-                request.form['id_ingrediente']
+            cursor.execute(update_total_query, (
+                request.form['id_factura'],
+                request.form['id_factura']
             ))
+            
             
             connection.commit()
             
             return jsonify({
                 'success': True,
-                'message': 'Ingrediente agregado y costos actualizados correctamente',
-                'total': total,
-                'costo_calculado': costo_ing_por_producto
+                'message': 'Ingrediente agregado correctamente',
+                'id': inserted_id,
+                'subtotal': float(subtotal)
             })
             
     except Exception as e:
