@@ -110,6 +110,7 @@ class Producto:
             cursor.execute(sql)
             resultados = cursor.fetchall()
             
+
             def formato_peso_colombiano(valor):
                 if valor is None:
                     return "0"
@@ -129,7 +130,12 @@ class Producto:
                     'rentabilidad': f"{resultado[8]:.2f}%"  # Formateo a porcentaje
                 }
                 productos.append(producto)
-            return productos
+                
+            total_rentabilidad = sum(float(producto['rentabilidad'].rstrip('%')) for producto in productos) / len(productos)
+            total_rentabilidad = f"{total_rentabilidad:.2f}%"
+            
+            return productos, total_rentabilidad
+        
         except Exception as e:
             print(f"Error al obtener productos: {e}")
             return []

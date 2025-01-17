@@ -21,7 +21,7 @@
                     <p><strong>Fecha:</strong> {{ factura.fecha.strftime('%d/%m/%Y') }}</p>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>Proveedor:</strong> {{ factura.id_proveedor }}</p>
+                    <p><strong>Proveedor:</strong> {{ factura.nombre_proveedor }}</p>
                 </div>
             </div>
         </div>
@@ -35,13 +35,19 @@
                 <input type="hidden" name="id_factura" value="{{ factura.id }}">
                 
                 <div class="col-md-3">
-                    <label for="id_ingrediente" class="form-label">Ingrediente</label>
-                    <select class="form-select" id="id_ingrediente" name="id_ingrediente" required>
-                        <option value="">Seleccione...</option>
-                        {% for ingrediente in todos_ingredientes %}
-                        <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="buscador_ingrediente" class="form-label">Ingrediente</label>
+                    <div class="position-relative">
+                        <input type="text" 
+                               class="form-control" 
+                               id="buscador_ingrediente" 
+                               autocomplete="off" 
+                               placeholder="Buscar ingrediente..."
+                               required>
+                        <input type="hidden" id="id_ingrediente" name="id_ingrediente" required>
+                        <div id="resultados_busqueda" 
+                             class="position-absolute top-100 start-0 w-100 mt-1 d-none">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-md-2">
@@ -114,6 +120,155 @@
 </div>
 
 <script>
+    let timeoutId;
+
+    function inicializarBuscador() {
+        const buscador = document.getElementById('buscador_ingrediente');
+        const resultados = document.getElementById('resultados_busqueda');
+        
+        if (!buscador || !resultados) return; // Verificación de elementos
+        
+        buscador.addEventListener('input', function(e) {
+            clearTimeout(timeoutId);
+            const query = e.target.value.trim();
+            
+            if (query.length < 2) {
+                resultados.classList.add('d-none');
+                return;
+            }
+
+            timeoutId = setTimeout(() => {
+                buscarIngredientes(query);
+            }, 300);
+        });
+
+        // Cerrar resultados al hacer click fuera
+        document.addEventListener('click', function(e) {
+            if (!buscador.contains(e.target) && !resultados.contains(e.target)) {
+                resultados.classList.add('d-none');
+            }
+        });
+    }
+
+    function buscarIngredientes(query) {
+        fetch(`/fabricante_ingredientes/buscar?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    mostrarResultados(data);
+                } else {
+                    mostrarError();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarError();
+            });
+    }
+
+    function mostrarResultados(ingredientes) {
+        const resultados = document.getElementById('resultados_busqueda');
+        if (!resultados) return;
+        
+        if (!Array.isArray(ingredientes) || ingredientes.length === 0) {
+            resultados.innerHTML = `
+                <div class="list-group shadow-sm">
+                    <div class="list-group-item text-muted">
+                        No se encontraron resultados
+                    </div>
+                </div>`;
+            resultados.classList.remove('d-none');
+            return;
+        }
+
+        resultados.innerHTML = `
+            <div class="list-group shadow-sm">
+                ${ingredientes.map(ing => `
+                    <button type="button" 
+                            class="list-group-item list-group-item-action py-2"
+                            onclick="seleccionarIngrediente(${ing.id || ''}, '${(ing.nombre || '').replace(/'/g, "\\'")}')">
+                        ${ing.nombre || ''}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        
+        resultados.classList.remove('d-none');
+    }
+
+    function seleccionarIngrediente(id, nombre) {
+        const idInput = document.getElementById('id_ingrediente');
+        const buscador = document.getElementById('buscador_ingrediente');
+        const resultados = document.getElementById('resultados_busqueda');
+        
+        if (idInput && buscador && resultados) {
+            idInput.value = id;
+            buscador.value = nombre;
+            resultados.classList.add('d-none');
+        }
+    }
+
+    function mostrarError() {
+        const resultados = document.getElementById('resultados_busqueda');
+        if (!resultados) return;
+        
+        resultados.innerHTML = `
+            <div class="list-group shadow-sm">
+                <div class="list-group-item text-danger">
+                    Error al buscar ingredientes
+                </div>
+            </div>`;
+        resultados.classList.remove('d-none');
+    }
+
+    // Asegurarnos de que el DOM está completamente cargado
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicializarBuscador);
+    } else {
+        inicializarBuscador();
+    }
+
+    function buscarIngredientes(query) {
+        fetch(`/fabricante_ingredientes/buscar?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                mostrarResultados(data);
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function mostrarResultados(ingredientes) {
+        const resultados = document.getElementById('resultados_busqueda');
+        
+        if (ingredientes.length === 0) {
+            resultados.classList.add('d-none');
+            return;
+        }
+
+        resultados.innerHTML = `
+            <div class="list-group shadow">
+                ${ingredientes.map(ing => `
+                    <button type="button" 
+                            class="list-group-item list-group-item-action" 
+                            onclick="seleccionarIngrediente(${ing.id}, '${ing.nombre}')">
+                        ${ing.nombre}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        
+        resultados.classList.remove('d-none');
+    }
+
+    function seleccionarIngrediente(id, nombre) {
+        document.getElementById('id_ingrediente').value = id;
+        document.getElementById('buscador_ingrediente').value = nombre;
+        document.getElementById('resultados_busqueda').classList.add('d-none');
+    }
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', inicializarBuscador);
+
     // Función para actualizar totales
     function actualizarTotales() {
         const filas = document.querySelectorAll('#ingredientes-tabla tr');
@@ -146,8 +301,10 @@
         const formData = new FormData(form);
 
         // Validaciones básicas antes de enviar
-        const ingredienteSelect = document.getElementById('id_ingrediente');
-        if (!ingredienteSelect.value) {
+        const idIngrediente = document.getElementById('id_ingrediente').value;
+        const nombreIngrediente = document.getElementById('buscador_ingrediente').value;
+        
+        if (!idIngrediente) {
             alert('Por favor seleccione un ingrediente');
             return;
         }
@@ -171,7 +328,7 @@
         btnAgregar.disabled = true;
         btnAgregar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Agregando...';
 
-        fetch('{{ url_for("fabricante_ingredientes.agregar_ingrediente_factura") }}', {
+        fetch('/fabricante_ingredientes/agregar_ingrediente_factura', {
             method: 'POST',
             body: formData
         })
@@ -187,15 +344,17 @@
                 const tabla = document.getElementById('ingredientes-tabla');
                 const tbody = tabla.getElementsByTagName('tbody')[0] || tabla;
                 const newRow = tbody.insertRow();
-                const nombreIngrediente = ingredienteSelect.options[ingredienteSelect.selectedIndex].text;
-                const subtotal = (cantidad * precioUnitario).toFixed(2);
+
+                const cantidad = parseFloat(formData.get('cantidad'));
+                const precioUnitario = parseFloat(formData.get('precio_unitario'));
+                const subtotal = cantidad * precioUnitario;
 
                 newRow.innerHTML = `
                     <td>${nombreIngrediente}</td>
-                    <td>${parseFloat(cantidad).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>${cantidad.toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
                     <td>${formData.get('unidad_medida')}</td>
-                    <td>$${parseFloat(precioUnitario).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
-                    <td>$${parseFloat(subtotal).toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>$${precioUnitario.toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>$${subtotal.toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
                     <td>
                         <button class="btn btn-danger btn-sm" 
                                 onclick="eliminarIngrediente(this)" 
@@ -205,8 +364,10 @@
                     </td>
                 `;
 
-                // Limpiar el formulario
+                // Limpiar el formulario y el buscador
                 form.reset();
+                document.getElementById('buscador_ingrediente').value = '';
+                document.getElementById('id_ingrediente').value = '';
 
                 // Actualizar totales después de agregar
                 actualizarTotales();

@@ -364,9 +364,11 @@ def editar_factura(factura_id):
         with connection.cursor(dictionary=True) as cursor:
             # Obtener datos de la factura
             cursor.execute("""
-                SELECT id, fecha, numero_factura, id_proveedor 
-                FROM facturas_fabricacion 
-                WHERE id = %s
+                SELECT ff.id, ff.fecha, ff.numero_factura, p.nombre as nombre_proveedor
+                FROM facturas_fabricacion ff
+                JOIN proveedores p
+                ON ff.id_proveedor = p.id
+                WHERE ff.id = %s
             """, (factura_id,))
             factura = cursor.fetchone()
             
@@ -435,3 +437,35 @@ def eliminar_factura(factura_id):
 
     return redirect(url_for('fabricante_ingredientes.mostrar_facturas'))
 
+
+@fabricante_ingredientes_bp.route('/buscar')
+def buscar_ingrediente():
+    try:
+        query = request.args.get('q', '')
+        if len(query) < 2:
+            return jsonify([])
+        
+        connection = db.get_connection()
+        cursor = connection.cursor()  # Quitamos dictionary=True ya que no lo soporta
+        
+        sql = """
+            SELECT id, nombre 
+            FROM ingredientes 
+            WHERE nombre LIKE %s 
+            ORDER BY nombre 
+            LIMIT 10
+        """
+        cursor.execute(sql, (f'%{query}%',))
+        filas = cursor.fetchall()
+        
+        # Convertimos las tuplas a diccionarios
+        resultados = [{'id': fila[0], 'nombre': fila[1]} for fila in filas]
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify(resultados)
+        
+    except Exception as e:
+        print(f"Error en búsqueda de ingredientes: {str(e)}")
+        return jsonify([])  # Devolvemos lista vacía en caso de error

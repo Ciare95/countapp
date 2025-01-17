@@ -9,8 +9,18 @@
         <button id="btn-crear" class="btn btn-success">Crear Producto</button>
     </div>
     
-    <div class="row mb-4">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <!-- Contenido de la primera sección -->
+            <div class="card bg-light" style="max-width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Rentabilidad Total</h5>
+                    <p class="card-text text-primary" id="rentabilidad-total">Porcentaje de Rentabilidad Total: {{ total_rentabilidad }}</p>
+                </div>
+            </div>
+        </div>
         <div class="col-md-6">
+            <!-- Contenido de la segunda sección -->
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="fas fa-search"></i>

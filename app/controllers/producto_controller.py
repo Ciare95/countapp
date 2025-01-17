@@ -14,10 +14,10 @@ producto_bp = Blueprint("producto", __name__, url_prefix="/productos")
 @producto_bp.route('/productos', methods=['GET'])
 def listar_productos():
     producto = Producto()
-    productos = producto.obtener_todos()
+    productos, total_rentabilidad = producto.obtener_todos()
     categoria = Categoria()
     categorias = categoria.obtener_categorias()
-    return render_template('productos/listar.html', productos=productos, categorias=categorias)
+    return render_template('productos/listar.html', productos=productos, categorias=categorias, total_rentabilidad=total_rentabilidad)
 
 
 @producto_bp.route("/crear", methods=['POST'])

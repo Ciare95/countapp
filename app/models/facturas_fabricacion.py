@@ -1,12 +1,15 @@
 from app.db import connection_pool as db
 
 class FacturaFabricacion:
-    def __init__(self, id, numero_factura, id_proveedor, fecha, total):
+    def __init__(self, id, numero_factura, id_proveedor, fecha, total, nombre_proveedor=None):
         self.id = id
         self.numero_factura = numero_factura
         self.id_proveedor = id_proveedor
         self.fecha = fecha
         self.total = total
+        self.nombre_proveedor = nombre_proveedor
+
+
 
     @staticmethod
     def obtener_todos():
@@ -20,18 +23,23 @@ class FacturaFabricacion:
 
     @staticmethod
     def obtener_con_filtros(fecha=None, mes=None, anio=None):
-        # Construcción de la consulta base
-        query = "SELECT * FROM facturas_fabricacion WHERE 1=1"
+        # Construcción de la consulta base con JOIN
+        query = """
+            SELECT f.*, p.nombre AS nombre_proveedor 
+            FROM facturas_fabricacion f
+            JOIN proveedores p ON f.id_proveedor = p.id
+            WHERE 1=1
+        """
         
         # Aplicar filtros si están presentes
         if fecha:
-            query += f" AND DATE(fecha) = '{fecha}'"
+            query += f" AND DATE(f.fecha) = '{fecha}'"
         if mes:
-            query += f" AND DATE_FORMAT(fecha, '%Y-%m') = '{mes}'"
+            query += f" AND DATE_FORMAT(f.fecha, '%Y-%m') = '{mes}'"
         if anio:
-            query += f" AND YEAR(fecha) = '{anio}'"
+            query += f" AND YEAR(f.fecha) = '{anio}'"
 
-        query += " ORDER BY id DESC"  # Ordenar por ID de forma descendente
+        query += " ORDER BY f.id DESC"  # Ordenar por ID de forma descendente
         
         connection = db.get_connection()
         with connection.cursor(dictionary=True) as cursor:
@@ -40,6 +48,7 @@ class FacturaFabricacion:
         connection.close()
 
         return [FacturaFabricacion(**r) for r in resultados]
+
 
     @staticmethod
     def crear(numero_factura, id_proveedor, fecha, total):
