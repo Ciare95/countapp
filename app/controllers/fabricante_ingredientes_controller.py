@@ -329,12 +329,20 @@ def agregar_ingrediente_factura():
 @fabricante_ingredientes_bp.route('/mostrar_facturas')
 def mostrar_facturas():
     try:
-        facturas = FacturaFabricacion.obtener_todos()
-        
-        return render_template('fabricante/listar_facturas.html', facturas=facturas)
+        # Recuperar los filtros de la URL
+        fecha = request.args.get('fecha')
+        mes = request.args.get('mes')
+        anio = request.args.get('anio')
+
+        # Obtener las facturas filtradas
+        facturas = FacturaFabricacion.obtener_con_filtros(fecha=fecha, mes=mes, anio=anio)
+
+        return render_template('fabricante/listar_facturas.html', facturas=facturas, fecha=fecha, mes=mes, anio=anio)
+    
     except Exception as e:
         print(f"Error: {e}")
         return render_template('fabricante/listar_facturas.html', facturas=[], error="Error al cargar facturas")
+
     
     
 @fabricante_ingredientes_bp.route('/ver_factura/<int:id_factura>')
@@ -404,3 +412,26 @@ def eliminar_ingrediente_factura(ingrediente_id):
     finally:
         if connection:
             connection.close()
+            
+
+@fabricante_ingredientes_bp.route('/eliminar_factura/<int:factura_id>', methods=['GET'])
+def eliminar_factura(factura_id):
+    conexion = db.get_connection()
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        # Eliminar la factura directamente
+        sql_eliminar_factura = "DELETE FROM facturas_fabricacion WHERE id = %s"
+        cursor.execute(sql_eliminar_factura, (factura_id,))
+        conexion.commit()
+        flash("Factura eliminada exitosamente.", "success")
+    except Exception as e:
+        print(f"Error al eliminar la factura: {e}")
+        flash("Hubo un error al intentar eliminar la factura.", "danger")
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+    return redirect(url_for('fabricante_ingredientes.mostrar_facturas'))
+

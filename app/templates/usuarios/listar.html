@@ -40,9 +40,9 @@
                 {% for usuario in usuarios %}
                 <tr>
                     <td>{{ usuario.nombre }}</td>
-                    <td>{{ 'Administrador' if usuario.rol == 1 else 'Usuario' }}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm btn-editar"
+                    <td>{{ usuario.rol }}</td>
+                    <td class="bg-dark text-white">
+                        <button class="btn text-white hover-effect btn-editar"
                             data-id="{{ usuario.id }}"
                             data-nombre="{{ usuario.nombre }}"
                             data-rol="{{ usuario.rol }}">
@@ -51,13 +51,13 @@
                         <form action="{{ url_for('usuario.eliminar_usuario', id=usuario.id) }}" 
                               method="POST" 
                               style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm" 
+                            <button type="submit" class="btn text-white hover-effect" 
                                     onclick="return confirmarEliminacion()">Eliminar</button>
                         </form>
                     </td>
                 </tr>
                 {% endfor %}
-            </tbody>
+            </tbody>            
         </table>
         
         <a href="/" class="btn btn-secondary btn-sm">Volver</a>

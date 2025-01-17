@@ -1,7 +1,9 @@
 from flask import jsonify, render_template, request, redirect, url_for, Blueprint, flash
+import decimal
 from app.models.categorias import Categoria
 from app.models.productos import Producto
 from app.db import connection_pool
+from app.models.facturas import FacturaModel
 from flask_login import login_required
 from app.controllers.usuario_controller import administrador_requerido
 
@@ -100,61 +102,206 @@ def buscar_producto(termino):
         return jsonify({"error": str(e)}), 500
 
 
-@producto_bp.route('/registro_ingresos/agregar_producto', methods=['POST'])
-def agregar_producto():
-    data = request.get_json()
+@producto_bp.route('/ingreso_producto')
+def ingreso_producto():
+    numero_factura = request.args.get('numero_factura')
+    if not numero_factura:
+        flash('Número de factura no proporcionado', 'error')
+        return redirect(url_for('factura.lista_facturas'))
     
-    # Validación inicial de los datos recibidos
-    required_fields = ['id_factura', 'id_producto', 'cantidad', 'precio_compra', 'precio_venta']
-    for field in required_fields:
-        if field not in data:
-            flash(f"Falta el campo obligatorio: {field}", "error")
-            return jsonify({"error": f"Falta el campo obligatorio: {field}"}), 400
+    return render_template('informes/ingreso_producto.html', numero_factura=numero_factura)
 
-    id_factura = data['id_factura']
-    id_producto = data['id_producto']
-    cantidad = data['cantidad']
-    precio_compra = data['precio_compra']
-    precio_venta = data['precio_venta']
-
+@producto_bp.route('/factura/<numero_factura>')
+def obtener_productos_factura(numero_factura):
     try:
-        # Obtener conexión desde el pool
-        conexion = connection_pool.get_connection()
-        cursor = conexion.cursor()
+        connection = connection_pool.get_connection()
+        cursor = connection.cursor(dictionary=True)
 
-        # Iniciar una transacción
-        conexion.start_transaction()
+        # Primero obtener el ID de la factura
+        cursor.execute("""
+            SELECT id FROM facturas WHERE numero_factura = %s
+        """, (numero_factura,))
+        factura = cursor.fetchone()
 
-        # Insertar en la tabla intermedia productos_factura
-        sql_insert = """
-        INSERT INTO productos_factura (id_factura, id_producto, cantidad, precio_compra, precio_venta)
-        VALUES (%s, %s, %s, %s, %s)
-        """
-        cursor.execute(sql_insert, (id_factura, id_producto, cantidad, precio_compra, precio_venta))
+        if not factura:
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'Factura no encontrada'}), 404
 
-        # Actualizar el stock del producto en la tabla productos
-        sql_update_stock = """
-        UPDATE productos
-        SET stock = stock + %s
-        WHERE id = %s
-        """
-        cursor.execute(sql_update_stock, (cantidad, id_producto))  # Aquí sumamos porque estás ingresando productos a stock
+        # Obtener los productos de la factura
+        cursor.execute("""
+            SELECT 
+                pf.id,
+                p.nombre,
+                pf.cantidad,
+                pf.precio_compra,
+                pf.precio_venta,
+                pf.porcentaje_iva
+            FROM productos_factura pf
+            JOIN productos p ON pf.id_producto = p.id
+            WHERE pf.id_factura = %s
+        """, (factura['id'],))
 
-        # Confirmar la transacción
-        conexion.commit()
+        productos = cursor.fetchall()
+        
+        # Convertir decimales a float para JSON
+        productos_list = []
+        for p in productos:
+            producto_dict = dict(p)
+            for key, value in producto_dict.items():
+                if isinstance(value, decimal.Decimal):
+                    producto_dict[key] = float(value)
+            productos_list.append(producto_dict)
 
-        flash("Producto agregado exitosamente.", "success")
-        return jsonify({"message": "Producto agregado exitosamente"}), 200
+        cursor.close()
+        connection.close()
+        return jsonify(productos_list)
 
     except Exception as e:
-        if 'conexion' in locals() and conexion.is_connected():
-            conexion.rollback()  # Revertir la transacción si hay un error
-        flash(f"Error al agregar producto: {str(e)}", "error")
-        return jsonify({"error": f"Error al agregar producto: {str(e)}"}), 500
-
-    finally:
-        # Asegurar que la conexión sea cerrada
-        if 'cursor' in locals() and cursor:
+        if 'cursor' in locals():
             cursor.close()
-        if 'conexion' in locals() and conexion.is_connected():
-            conexion.close()
+        if 'connection' in locals():
+            connection.close()
+        return jsonify({'error': str(e)}), 500
+
+@producto_bp.route('/registro_ingresos/agregar_producto', methods=['POST'])
+def agregar_producto():
+    try:
+        connection = connection_pool.get_connection()
+        cursor = connection.cursor(dictionary=True)
+        data = request.get_json()
+
+        # Iniciar transacción
+        connection.start_transaction()
+
+        # Obtener el ID de la factura
+        cursor.execute("""
+            SELECT id FROM facturas WHERE numero_factura = %s
+        """, (data['numero_factura'],))
+        factura = cursor.fetchone()
+
+        if not factura:
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'Factura no encontrada'}), 404
+
+        # Actualizar el producto en la tabla productos
+        cursor.execute("""
+            UPDATE productos 
+            SET stock = stock + %s,
+                precio = %s,
+                precio_compra = %s
+            WHERE id = %s
+        """, (
+            int(data['cantidad']),
+            float(data['precio_venta']),
+            float(data['precio_compra']),
+            int(data['id_producto'])
+        ))
+
+        # Insertar el nuevo producto en productos_factura
+        cursor.execute("""
+            INSERT INTO productos_factura 
+            (id_factura, id_producto, cantidad, precio_compra, precio_venta, porcentaje_iva)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            factura['id'],
+            data['id_producto'],
+            data['cantidad'],
+            data['precio_compra'],
+            data['precio_venta'],
+            data['porcentaje_iva']
+        ))
+
+        # Calcular y actualizar el total de la factura
+        cursor.execute("""
+            SELECT SUM(precio_compra * cantidad) as total
+            FROM productos_factura
+            WHERE id_factura = %s
+        """, (factura['id'],))
+        total = cursor.fetchone()['total'] or 0
+
+        cursor.execute("""
+            UPDATE facturas 
+            SET total = %s 
+            WHERE id = %s
+        """, (total, factura['id']))
+
+        # Confirmar la transacción
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'message': 'Producto agregado exitosamente y stock actualizado'})
+
+    except Exception as e:
+        # Revertir cambios si hay error
+        if 'connection' in locals():
+            connection.rollback()
+            cursor.close()
+            connection.close()
+        return jsonify({'error': str(e)}), 500
+
+@producto_bp.route('/eliminar_producto/<int:producto_id>', methods=['DELETE'])
+def eliminar_producto_factura(producto_id):
+    try:
+        connection = connection_pool.get_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        # Iniciar transacción
+        connection.start_transaction()
+
+        # Obtener la información del producto antes de eliminarlo
+        cursor.execute("""
+            SELECT pf.id_factura, pf.id_producto, pf.cantidad, pf.precio_compra 
+            FROM productos_factura pf 
+            WHERE pf.id = %s
+        """, (producto_id,))
+        producto = cursor.fetchone()
+
+        if not producto:
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'Producto no encontrado'}), 404
+
+        # Actualizar el stock en la tabla productos (restar la cantidad)
+        cursor.execute("""
+            UPDATE productos 
+            SET stock = stock - %s
+            WHERE id = %s
+        """, (producto['cantidad'], producto['id_producto']))
+
+        # Eliminar el producto de productos_factura
+        cursor.execute("""
+            DELETE FROM productos_factura WHERE id = %s
+        """, (producto_id,))
+
+        # Recalcular el total de la factura
+        cursor.execute("""
+            SELECT SUM(precio_compra * cantidad) as total
+            FROM productos_factura
+            WHERE id_factura = %s
+        """, (producto['id_factura'],))
+        nuevo_total = cursor.fetchone()['total'] or 0
+
+        # Actualizar el total en la factura
+        cursor.execute("""
+            UPDATE facturas 
+            SET total = %s 
+            WHERE id = %s
+        """, (nuevo_total, producto['id_factura']))
+
+        # Confirmar la transacción
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return jsonify({'message': 'Producto eliminado exitosamente y stock actualizado'})
+
+    except Exception as e:
+        # Revertir cambios si hay error
+        if 'connection' in locals():
+            connection.rollback()
+            cursor.close()
+            connection.close()
+        return jsonify({'error': str(e)}), 500

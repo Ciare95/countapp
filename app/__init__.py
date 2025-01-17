@@ -1,4 +1,5 @@
 from flask import Flask, redirect, url_for, render_template, session, request
+from flask_cors import CORS
 
 
 from app.controllers import (
@@ -13,7 +14,7 @@ from app.models.usuarios import Usuario
 def create_app():
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'Ciarentcity2'
-
+    CORS(app)
    
     
     # Configuración del Login Manager

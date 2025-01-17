@@ -31,8 +31,8 @@
             <thead class="table-dark">
                 <tr>
                     <th>Producto</th>
-                    <th>Precio</th>
                     <th>Precio de Compra</th>
+                    <th>Precio de venta</th>
                     <th>Stock</th>
                     <th>Acciones</th>
                 </tr>
@@ -41,12 +41,12 @@
                 {% for producto in productos %}
                 <tr>
                     <td>{{ producto.producto_nombre }}</td>
-                    <td>${{ producto.precio }}</td>
                     <td>${{ producto.precio_compra }}</td>
+                    <td>${{ producto.precio }}</td>
                     <td>{{ producto.stock }}</td>
-                    <td>
+                    <td class="bg-dark text-white">
                         <!-- Botón de Editar Producto con atributos data-* -->
-                        <button class="btn btn-warning btn-sm btn-editar" 
+                        <button class="btn text-white hover-effect btn-editar" 
                                 data-id="{{ producto.id }}" 
                                 data-nombre="{{ producto.producto_nombre }}" 
                                 data-categoria="{{ producto.categoria_id }}" 
@@ -59,7 +59,7 @@
                         <!-- Formulario para Eliminar Producto -->
                         <form action="{{ url_for('producto.eliminar_producto', id=producto.id) }}" 
                               method="POST" style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirmarEliminacion()">Eliminar</button>
+                            <button type="submit" class="btn text-white hover-effect" onclick="return confirmarEliminacion()">Eliminar</button>
                         </form>
                     </td>
                 </tr>

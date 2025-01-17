@@ -3,7 +3,26 @@
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Listado de Facturas de Fabricación</h1>
-    
+
+    <!-- Formulario de filtrado por fecha -->
+    <form class="d-flex gap-2 mb-4" method="GET" action="{{ url_for('fabricante_ingredientes.mostrar_facturas') }}">
+        <input type="date" name="fecha" id="fecha" class="form-control form-control-sm" value="{{ fecha }}" placeholder="Fecha">
+        <input type="month" name="mes" id="mes" class="form-control form-control-sm" value="{{ mes }}" placeholder="Mes">
+        <input type="number" name="anio" id="anio" class="form-control form-control-sm" value="{{ anio }}" min="2000" max="2100" placeholder="Año">
+        <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+    </form>
+
+    <!-- Mostrar los mensajes flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mt-3" role="alert" id="flash-message">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     {% if error %}
         <div class="alert alert-danger" role="alert">
             {{ error }}
@@ -30,22 +49,19 @@
                             <td>{{ factura.fecha }}</td>
                             <td>${{ factura.total | round(2) }}</td>
                             
-                            <td>
-                                <a href="/fabricante_ingredientes/ver_factura/{{ factura.id }}" class="btn btn-primary btn-sm">
+                            <td class="bg-dark text-white">
+                                <a href="/fabricante_ingredientes/ver_factura/{{ factura.id }}" class="btn text-white hover-effect">
                                     Ver
                                 </a>                              
-                                <a href="/fabricante_ingredientes/editar_factura/{{ factura.id }}" class="btn btn-warning btn-sm">
+                                <a href="/fabricante_ingredientes/editar_factura/{{ factura.id }}" class="btn text-white hover-effect">
                                     Editar
                                 </a>
-                                <!--
-                                <a href="/fabricante_ingredientes/eliminar_factura/{{ factura.id }}" 
-                                class="btn btn-danger btn-sm" 
+                                <a href="{{ url_for('fabricante_ingredientes.eliminar_factura', factura_id=factura.id) }}" 
+                                class="btn text-white hover-effect" 
                                 onclick="return confirm('¿Estás seguro de que deseas eliminar esta factura?');">
                                     Eliminar
                                 </a> 
-                                -->
                             </td>
-                            
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -57,4 +73,17 @@
         {% endif %}
     {% endif %}
 </div>
+
+{% block scripts %}
+    <script>
+        // Función para ocultar los mensajes flash después de 3 segundos
+        window.setTimeout(function() {
+            const flashMessages = document.querySelectorAll('.alert');
+            flashMessages.forEach(function(message) {
+                message.style.display = 'none';
+            });
+        }, 3000); // 3000 milisegundos = 3 segundos
+    </script>
+{% endblock %}
+
 {% endblock %}

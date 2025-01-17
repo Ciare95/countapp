@@ -98,10 +98,45 @@ def create_pool():
         logger.error(f"Traceback completo:\n{traceback.format_exc()}")
         raise
 
+def ensure_roles_exist(pool):
+    """Crea los roles 'administrador' y 'usuario' si no existen en la tabla 'rol'."""
+    try:
+        conn = pool.get_connection()
+        cursor = conn.cursor()
+        
+        # Verificar si los roles existen
+        cursor.execute("SELECT COUNT(*) FROM rol WHERE nombre = 'administrador'")
+        admin_exists = cursor.fetchone()[0] > 0
+        
+        cursor.execute("SELECT COUNT(*) FROM rol WHERE nombre = 'usuario'")
+        user_exists = cursor.fetchone()[0] > 0
+        
+        # Insertar los roles si no existen
+        if not admin_exists:
+            cursor.execute("INSERT INTO rol (nombre) VALUES ('administrador')")
+            logger.info("Rol 'administrador' creado exitosamente.")
+        else:
+            logger.debug("Rol 'administrador' ya existe.")
+        
+        if not user_exists:
+            cursor.execute("INSERT INTO rol (nombre) VALUES ('usuario')")
+            logger.info("Rol 'usuario' creado exitosamente.")
+        else:
+            logger.debug("Rol 'usuario' ya existe.")
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        logger.error("Error al asegurar la existencia de los roles:")
+        logger.error(traceback.format_exc())
+        raise
+
 # Crear el pool de conexiones
 try:
     logger.debug("=== Iniciando proceso de conexión ===")
     connection_pool = create_pool()
+    ensure_roles_exist(connection_pool)
 except Exception as e:
     logger.critical(f"Error crítico al inicializar el pool: {str(e)}")
     logger.critical("Detalles completos del error:")

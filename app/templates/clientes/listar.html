@@ -42,8 +42,8 @@
                     <td>{{ cliente.nombre }}</td>
                     <td>{{ cliente.apellido }}</td>
                     <td>{{ cliente.documento }}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm btn-editar" 
+                    <td class="bg-dark text-white">
+                        <button class="btn text-white hover-effect btn-editar" 
                                 data-id="{{ cliente.id }}" 
                                 data-nombre="{{ cliente.nombre }}" 
                                 data-apellido="{{ cliente.apellido }}" 
@@ -52,10 +52,10 @@
                         </button>
                         <form action="{{ url_for('cliente.eliminar_cliente', id=cliente.id) }}" 
                               method="POST" style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirmarEliminacion()">Eliminar</button>
+                            <button type="submit" class="btn text-white hover-effect" onclick="return confirmarEliminacion()">Eliminar</button>
                         </form>
                         <a href="{{ url_for('historiales.historial_cliente', cliente_id=cliente.id) }}" 
-                           class="btn btn-primary btn-sm">Ver Facturas</a>
+                           class="btn text-white hover-effect">Ver Facturas</a>
                     </td>
                 </tr>
                 {% endfor %}

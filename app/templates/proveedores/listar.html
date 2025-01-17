@@ -46,7 +46,6 @@
     <!-- Modal Crear Proveedor -->
     <div id="modal-crear" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" id="close-crear">&times;</span>
             <h2>Crear Proveedor</h2>
             <form id="form-crear">
                 <div class="mb-3">
@@ -70,7 +69,6 @@
     <!-- Modal Editar Proveedor -->
     <div id="modal-editar" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" id="close-editar">&times;</span>
             <h2>Editar Proveedor</h2>
             <form id="form-editar">
                 <input type="hidden" id="editar-id" name="id">
@@ -107,9 +105,9 @@
                         <td>${proveedor.nombre}</td>
                         <td>${proveedor.nit || ''}</td>
                         <td>${proveedor.telefono || ''}</td>
-                        <td>
-                            <button class="btn btn-warning btn-sm" onclick="mostrarModalEditar(${proveedor.id}, '${proveedor.nombre}', '${proveedor.nit}', '${proveedor.telefono}')">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="eliminarProveedor(${proveedor.id})">Eliminar</button>
+                        <td class="bg-dark text-white">
+                            <button class="btn text-white hover-effect" onclick="mostrarModalEditar(${proveedor.id}, '${proveedor.nombre}', '${proveedor.nit}', '${proveedor.telefono}')">Editar</button>
+                            <button class="btn text-white hover-effect" onclick="eliminarProveedor(${proveedor.id})">Eliminar</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -161,6 +159,7 @@
             const nit = document.getElementById('editar-nit').value;
             const telefono = document.getElementById('editar-telefono').value;
 
+
             try {
                 const response = await fetch(`/proveedores/actualizar/${id}`, {
                     method: 'PUT',
@@ -178,6 +177,7 @@
                 console.error('Error al editar el proveedor:', error);
             }
         });
+
 
         // Función para eliminar un proveedor
         async function eliminarProveedor(id) {

@@ -36,8 +36,8 @@
                 {% for categoria in categorias %}
                 <tr>
                     <td>{{ categoria.nombre }}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm btn-editar" 
+                    <td class="bg-dark text-white">
+                        <button class="btn text-white hover-effect btn-editar" 
                             data-id="{{ categoria.id }}" 
                             data-nombre="{{ categoria.nombre }}">
                             Editar
@@ -45,11 +45,11 @@
                         <form action="{{ url_for('categoria.eliminar_categoria', id=categoria.id) }}" 
                               method="POST" 
                               style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm" 
+                            <button type="submit" class="btn text-white hover-effect" 
                                     onclick="return confirmarEliminacion()">Eliminar</button>
                         </form>
                         <a href="{{ url_for('categoria.ver_productos_categoria', id=categoria.id) }}" 
-                           class="btn btn-secondary btn-sm">Ver Productos</a>
+                           class="btn text-white hover-effect">Ver Productos</a>
                     </td>
                 </tr>
                 {% endfor %}

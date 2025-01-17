@@ -36,6 +36,11 @@
                             <button class="btn btn-info btn-sm ver-productos" data-id="{{ factura.numero_factura }}">
                                 Ver Productos
                             </button>
+                            <a href="{{ url_for('producto.ingreso_producto', numero_factura=factura.numero_factura) }}" class="btn btn-primary btn-sm">
+                                Ingresar Productos
+                            </a>
+                                                        
+                            
                         </td>
                     </tr>
                     <tr id="productos-{{ factura.numero_factura }}" style="display: none;">
