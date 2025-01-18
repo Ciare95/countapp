@@ -271,18 +271,25 @@ def agregar_ingrediente_factura():
             
             cantidad = float(request.form['cantidad'])
             precio_unitario = float(request.form['precio_unitario'])
+            iva = float(request.form['iva'])
+            transporte = float(request.form['transporte'])
+            costo_final = float(request.form['costo_final'])
             
             query = """
             INSERT INTO ingredientes_factura 
-            (id_factura, id_ingrediente, cantidad, precio_unitario, medida_ingrediente)
-            VALUES (%s, %s, %s, %s, %s)
+            (id_factura, id_ingrediente, cantidad, precio_unitario, 
+             medida_ingrediente, iva, transporte, costo_final)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(query, (
                 request.form['id_factura'],
                 request.form['id_ingrediente'],
                 cantidad,
                 precio_unitario,
-                request.form['unidad_medida']
+                request.form['unidad_medida'],
+                iva,
+                transporte,
+                costo_final
             ))
             
             inserted_id = cursor.lastrowid
@@ -305,7 +312,6 @@ def agregar_ingrediente_factura():
                 request.form['id_factura'],
                 request.form['id_factura']
             ))
-            
             
             connection.commit()
             
@@ -350,6 +356,14 @@ def ver_factura(id_factura):
     try:
         ingredientes = IngredienteFactura.obtener_por_id(id_factura)
         
+        for ingrediente in ingredientes:
+                ingrediente['cantidad'] = float(ingrediente['cantidad'])
+                ingrediente['precio_unitario'] = float(ingrediente['precio_unitario'])
+                ingrediente['subtotal'] = float(ingrediente['subtotal'])
+                ingrediente['iva'] = float(ingrediente['iva']) if ingrediente['iva'] is not None else 0
+                ingrediente['transporte'] = float(ingrediente['transporte']) if ingrediente['transporte'] is not None else 0
+                ingrediente['costo_final'] = float(ingrediente['costo_final']) if ingrediente['costo_final'] is not None else 0
+        
         return render_template('fabricante/ver_factura.html', ingredientes=ingredientes)
     except Exception as e:
         print(f"Error: {e}")
@@ -378,6 +392,14 @@ def editar_factura(factura_id):
 
             # Obtener ingredientes de la factura
             ingredientes = IngredienteFactura.obtener_por_id(factura_id)
+            
+            for ingrediente in ingredientes:
+                ingrediente['cantidad'] = float(ingrediente['cantidad'])
+                ingrediente['precio_unitario'] = float(ingrediente['precio_unitario'])
+                ingrediente['subtotal'] = float(ingrediente['subtotal'])
+                ingrediente['iva'] = float(ingrediente['iva']) if ingrediente['iva'] is not None else 0
+                ingrediente['transporte'] = float(ingrediente['transporte']) if ingrediente['transporte'] is not None else 0
+                ingrediente['costo_final'] = float(ingrediente['costo_final']) if ingrediente['costo_final'] is not None else 0
             
             # Obtener todos los ingredientes disponibles
             ingredientes_disponibles = Ingrediente.obtener_todos()

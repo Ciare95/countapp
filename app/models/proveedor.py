@@ -58,14 +58,26 @@ class ProveedorModel:
         cursor = None
         try:
             cursor = connection.cursor()
-            query = "DELETE FROM proveedores WHERE id = %s"
-            cursor.execute(query, (id,))
+
+            # Verificar si el proveedor tiene facturas relacionadas
+            check_facturas_query = "SELECT COUNT(*) FROM facturas_fabricacion WHERE id_proveedor = %s"
+            cursor.execute(check_facturas_query, (id,))
+            facturas_relacionadas = cursor.fetchone()[0]
+
+            if facturas_relacionadas > 0:
+                return False, "No se puede eliminar el proveedor porque tiene facturas relacionadas."
+
+            # Eliminar el proveedor si no tiene relaciones
+            delete_proveedor_query = "DELETE FROM proveedores WHERE id = %s"
+            cursor.execute(delete_proveedor_query, (id,))
+
             connection.commit()
-            return True
+            return True, "Proveedor eliminado exitosamente."
         except Exception as e:
             print(f"Error al eliminar proveedor: {e}")
-            return False
+            return False, "Error al eliminar el proveedor. Inténtalo nuevamente."
         finally:
             if cursor:
                 cursor.close()
             connection.close()
+

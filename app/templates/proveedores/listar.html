@@ -9,16 +9,16 @@
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="container mt-3 flash-message">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
+                <div>
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
                 </div>
             {% endif %}
         {% endwith %}
+
 
 
         <!-- Botón Crear Proveedor -->
@@ -162,7 +162,7 @@
 
             try {
                 const response = await fetch(`/proveedores/actualizar/${id}`, {
-                    method: 'PUT',
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nombre, nit, telefono })
                 });
@@ -184,17 +184,21 @@
             if (!confirm('¿Estás seguro de eliminar este proveedor?')) return;
 
             try {
-                const response = await fetch(`/proveedores/eliminar/${id}`, { method: 'DELETE' });
+                const response = await fetch(`/proveedores/eliminar/${id}`, { method: 'POST' });
+                const data = await response.json();
 
                 if (response.ok) {
-                    cargarProveedores();
+                    alert(data.message); // Mostrar mensaje de éxito
+                    cargarProveedores(); // Actualizar la tabla
                 } else {
-                    alert('Error al eliminar el proveedor');
+                    alert(data.message); // Mostrar mensaje de error
                 }
             } catch (error) {
                 console.error('Error al eliminar el proveedor:', error);
+                alert('Ocurrió un error al intentar eliminar el proveedor.');
             }
         }
+
 
         document.getElementById('btn-crear').addEventListener('click', function () {
             abrirModal('modal-crear');
@@ -203,6 +207,12 @@
 
         // Función para abrir un modal
         function abrirModal(modalId) {
+            // Si es el modal de creación, limpia los campos del formulario
+            if (modalId === 'modal-crear') {
+                document.getElementById('nombre').value = '';
+                document.getElementById('nit').value = '';
+                document.getElementById('telefono').value = '';
+            }
             document.getElementById(modalId).style.display = 'block';
         }
 
@@ -210,6 +220,7 @@
         function cerrarModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
+
 
         // Cargar los proveedores al cargar la página
         window.onload = cargarProveedores;

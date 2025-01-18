@@ -73,6 +73,23 @@
                     <label for="precio_unitario" class="form-label">Precio Unitario</label>
                     <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" step="0.01" required>
                 </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Porcentaje de IVA (%)</label>
+                    <input type="number" class="form-control form-control-sm" id="porcentaje_iva" value="0">
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Porcentaje de Transporte (%)</label>
+                    <input type="number" class="form-control form-control-sm" id="porcentaje_transporte" value="0">
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Precio de Compra Final (Con % de iva y % de transporte)</label>
+                    <input type="text" class="form-control form-control-sm" id="precio_compra_final" disabled>
+                </div>
+                
+                
 
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="button" class="btn btn-primary w-100" onclick="agregarIngrediente()">Agregar</button>
@@ -94,6 +111,9 @@
                             <th>Unidad</th>
                             <th>Precio Unitario</th>
                             <th>Subtotal</th>
+                            <th>IVA</th>
+                            <th>Transporte</th>
+                            <th>Costo Final</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -105,6 +125,9 @@
                             <td>{{ ingrediente.medida_ingrediente }}</td>
                             <td>${{ "{:,.2f}".format(ingrediente.precio_unitario) }}</td>
                             <td>${{ "{:,.2f}".format(ingrediente.subtotal) }}</td>
+                            <td>${{ ingrediente.iva }}</td>
+                            <td>${{ ingrediente.transporte }}</td>
+                            <td>${{ "{:,.2f}".format(ingrediente.costo_final) }}</td>
                             <td>
                                 <button class="btn btn-danger btn-sm" 
                                         data-ingrediente-id="{{ ingrediente.id }}"
@@ -115,6 +138,7 @@
                         </tr>
                         {% endfor %}
                     </tbody>
+                    
                 </table>
                 <div class="d-flex justify-content-end">
                     <h5>Total: $<span id="total-subtotal">0.00</span></h5>
@@ -271,24 +295,21 @@
         document.getElementById('resultados_busqueda').classList.add('d-none');
     }
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', inicializarBuscador);
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', inicializarBuscador);
 
-    // Función para actualizar totales
     function actualizarTotales() {
         const filas = document.querySelectorAll('#ingredientes-tabla tr');
         let total = 0;
 
         filas.forEach(fila => {
-            const subtotalCell = fila.querySelector('td:nth-child(5)');
-            if (subtotalCell) {
-                // Limpia el texto de caracteres no numéricos y convierte a número
-                const subtotal = parseFloat(subtotalCell.textContent.replace(/[^\d.-]/g, '')) || 0;
-                total += subtotal;
+            const costoFinalCell = fila.querySelector('td:nth-child(8)');
+            if (costoFinalCell) {
+                const costoFinal = parseFloat(costoFinalCell.textContent.replace(/[^\d.-]/g, '')) || 0;
+                total += costoFinal;
             }
         });
 
-        // Actualiza el total en el DOM con formato de moneda
         const totalSpan = document.getElementById('total-subtotal');
         if (totalSpan) {
             totalSpan.textContent = total.toLocaleString('es-CO', { 
@@ -297,6 +318,23 @@ document.addEventListener('DOMContentLoaded', inicializarBuscador);
             });
         }
     }
+
+    const actualizarPrecioCompraFinal = () => {
+            const precioCompra = parseFloat(document.getElementById('precio_unitario').value);
+            const porcentajeIva = parseFloat(document.getElementById('porcentaje_iva').value) || 0;
+            const porcentajeTransporte = parseFloat(document.getElementById('porcentaje_transporte').value) || 0;
+            if (!isNaN(precioCompra)) {
+                const precioFinal = precioCompra * (1 + porcentajeIva/100 + porcentajeTransporte/100);
+                document.getElementById('precio_compra_final').value = precioFinal.toFixed(2);
+            }
+        };
+
+// Agregar el evento input a los campos relevantes
+document.getElementById('precio_unitario').addEventListener('input', actualizarPrecioCompraFinal);
+document.getElementById('porcentaje_iva').addEventListener('input', actualizarPrecioCompraFinal);
+document.getElementById('porcentaje_transporte').addEventListener('input', actualizarPrecioCompraFinal);
+
+
 
     // Llamar a actualizarTotales cuando se carga la página
     document.addEventListener('DOMContentLoaded', actualizarTotales);
@@ -327,6 +365,29 @@ document.addEventListener('DOMContentLoaded', inicializarBuscador);
             return;
         }
 
+        // Cálculos para enviar al servidor
+        const cantidadNum = parseFloat(cantidad);
+        const precioUnitarioNum = parseFloat(precioUnitario);
+        const subtotal = cantidadNum * precioUnitarioNum;
+
+        const porcentajeIVA = parseFloat(document.getElementById('porcentaje_iva').value || 0);
+        const porcentajeTransporte = parseFloat(document.getElementById('porcentaje_transporte').value || 0);
+
+        const iva = (subtotal * porcentajeIVA) / 100;
+        const transporte = (subtotal * porcentajeTransporte) / 100;
+        const costoFinal = subtotal + iva + transporte;
+
+        // Crear FormData con todos los datos
+        const serverFormData = new FormData();
+        serverFormData.append('id_factura', document.querySelector('input[name="id_factura"]').value); // Agregar id_factura
+        serverFormData.append('id_ingrediente', idIngrediente);
+        serverFormData.append('cantidad', cantidad);
+        serverFormData.append('precio_unitario', precioUnitario);
+        serverFormData.append('unidad_medida', formData.get('unidad_medida'));
+        serverFormData.append('iva', iva);
+        serverFormData.append('transporte', transporte);
+        serverFormData.append('costo_final', costoFinal);
+
         // Mostrar indicador de carga
         const btnAgregar = form.querySelector('button[type="button"]');
         const btnTextoOriginal = btnAgregar.innerHTML;
@@ -335,7 +396,7 @@ document.addEventListener('DOMContentLoaded', inicializarBuscador);
 
         fetch('/fabricante_ingredientes/agregar_ingrediente_factura', {
             method: 'POST',
-            body: formData
+            body: serverFormData
         })
         .then(response => {
             if (!response.ok) {
@@ -350,20 +411,18 @@ document.addEventListener('DOMContentLoaded', inicializarBuscador);
                 const tbody = tabla.getElementsByTagName('tbody')[0] || tabla;
                 const newRow = tbody.insertRow();
 
-                const cantidad = parseFloat(formData.get('cantidad'));
-                const precioUnitario = parseFloat(formData.get('precio_unitario'));
-                const subtotal = cantidad * precioUnitario;
-
                 newRow.innerHTML = `
                     <td>${nombreIngrediente}</td>
-                    <td>${cantidad.toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>${cantidadNum.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
                     <td>${formData.get('unidad_medida')}</td>
-                    <td>$${precioUnitario.toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
-                    <td>$${subtotal.toLocaleString('es-CO', {minimumFractionDigits: 2})}</td>
+                    <td>$${precioUnitarioNum.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
+                    <td>$${subtotal.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
+                    <td>$${iva.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
+                    <td>$${transporte.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
+                    <td>$${costoFinal.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</td>
                     <td>
                         <button class="btn btn-danger btn-sm" 
-                                onclick="eliminarIngrediente(this)" 
-                                data-ingrediente-id="${data.id}">
+                                onclick="eliminarIngrediente(this)">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
                     </td>

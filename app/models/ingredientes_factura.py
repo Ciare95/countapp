@@ -1,14 +1,18 @@
 from app.db import connection_pool as db
 
 class IngredienteFactura:
-    def __init__(self, id, nombre, cantidad, costo_unitario, id_factura, medida_ingrediente):
+    def __init__(self, id, nombre, cantidad, costo_unitario, id_factura, medida_ingrediente, iva=None, trasporte=None, costo_final=None):
         self.id = id
         self.nombre = nombre
         self.cantidad = cantidad
         self.costo_unitario = costo_unitario
         self.id_factura = id_factura
         self.medida_ingrediente = medida_ingrediente
-
+        self.iva = iva,
+        self.transporte = trasporte, 
+        self.costo_final = costo_final
+        
+        
     @staticmethod
     def obtener_todos():
         query = "SELECT * FROM ingredientes_factura"
@@ -31,6 +35,9 @@ class IngredienteFactura:
                 f.precio_unitario, 
                 f.subtotal, 
                 f.medida_ingrediente, 
+                f.iva,
+                f.transporte,
+                f.costo_final,
                 i.nombre AS nombre_ingrediente
             FROM ingredientes_factura f
             JOIN ingredientes i ON f.id_ingrediente = i.id

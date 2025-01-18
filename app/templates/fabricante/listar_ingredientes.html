@@ -4,6 +4,10 @@
 <div class="container mt-4">
     <h1 class="text-center">Lista de Ingredientes</h1>
 
+    <div class="text-end my-3">
+        <a href="{{ url_for('fabricante_ingredientes.crear_ingrediente') }}" class="btn btn-primary">Crear Ingrediente</a>
+    </div>
+
     <table class="table table-bordered mt-4">
         <thead>
             <tr>
@@ -30,8 +34,6 @@
         </tbody>
     </table>
 
-    <div class="text-end my-3">
-        <a href="{{ url_for('fabricante_ingredientes.crear_ingrediente') }}" class="btn btn-primary">Crear Ingrediente</a>
-    </div>
+    
 </div>
 {% endblock %}

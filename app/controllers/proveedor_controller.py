@@ -12,8 +12,8 @@ def obtener_proveedores():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': 'Error al obtener los proveedores'}), 500
+    
 
-# HTML template route    
 @proveedor_bp.route('/listar', methods=['GET'])
 def listar_proveedores():
     try:
@@ -46,13 +46,19 @@ def crear_proveedor():
 @proveedor_bp.route('/actualizar/<int:id>', methods=['POST'])
 def actualizar_proveedor(id):
     try:
-        data = request.form  # Cambiado a `request.form` para usar con formularios HTML
+        data = request.json  # Cambiado a `request.json` para JSON
         nombre = data.get('nombre')
         nit = data.get('nit')
         telefono = data.get('telefono')
+
+        if not nombre:  # Validación adicional en el backend
+            flash("El campo 'Nombre' es obligatorio.", "danger")
+            return redirect(url_for('proveedor.listar_proveedores'))
+
         if ProveedorModel.actualizar_proveedor(id, nombre, nit, telefono):
             flash("Proveedor actualizado exitosamente.", "success")
             return redirect(url_for('proveedor.listar_proveedores'))
+
         flash("Error al actualizar el proveedor.", "danger")
         return redirect(url_for('proveedor.listar_proveedores'))
     except Exception as e:
@@ -64,12 +70,12 @@ def actualizar_proveedor(id):
 @proveedor_bp.route('/eliminar/<int:id>', methods=['POST'])
 def eliminar_proveedor(id):
     try:
-        if ProveedorModel.eliminar_proveedor(id):
-            flash("Proveedor eliminado exitosamente.", "success")
-            return redirect(url_for('proveedor.listar_proveedores'))
-        flash("Error al eliminar el proveedor.", "danger")
-        return redirect(url_for('proveedor.listar_proveedores'))
+        resultado, mensaje = ProveedorModel.eliminar_proveedor(id)
+        if resultado:
+            return jsonify({"success": True, "message": "Proveedor eliminado exitosamente."}), 200
+        else:
+            return jsonify({"success": False, "message": mensaje}), 400
     except Exception as e:
         print(f"Error: {e}")
-        flash("Error al eliminar el proveedor. Inténtalo nuevamente.", "danger")
-        return redirect(url_for('proveedor.listar_proveedores'))
+        return jsonify({"success": False, "message": "Error al eliminar el proveedor. Inténtalo nuevamente."}), 500
+
