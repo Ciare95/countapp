@@ -54,6 +54,9 @@
                                     Ver
                                 </a>                              
                                 <a href="/fabricante_ingredientes/editar_factura/{{ factura.id }}" class="btn text-white hover-effect">
+                                    Agregar productos
+                                </a>
+                                <a href="/fabricante_ingredientes/actualizar_factura/{{ factura.id }}" class="btn text-white hover-effect">
                                     Editar
                                 </a>
                                 <a href="{{ url_for('fabricante_ingredientes.eliminar_factura', factura_id=factura.id) }}" 
@@ -87,3 +90,4 @@
 {% endblock %}
 
 {% endblock %}
+

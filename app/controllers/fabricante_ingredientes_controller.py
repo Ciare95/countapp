@@ -5,6 +5,7 @@ from app.models.ingrediente import Ingrediente
 from app.controllers.fabricante_utilidades_controller import convertir_unidad
 from app.models.facturas_fabricacion import FacturaFabricacion
 from app.models.ingredientes_factura import IngredienteFactura
+from app.models.proveedor import ProveedorModel
 import decimal
 from app.db import connection_pool as db
 
@@ -491,3 +492,33 @@ def buscar_ingrediente():
     except Exception as e:
         print(f"Error en búsqueda de ingredientes: {str(e)}")
         return jsonify([])  # Devolvemos lista vacía en caso de error
+    
+    
+@fabricante_ingredientes_bp.route('/actualizar_factura/<int:id>', methods=['GET', 'POST'])
+def actualizar_factura(id):
+    try:
+        if request.method == 'GET':
+            # Get the current factura data to populate the form
+            factura = FacturaFabricacion.obtener_factura_por_id(id)
+            proveedores = ProveedorModel.obtener_proveedores()
+            return render_template('fabricante/actualizar_factura.html', 
+                                factura=factura, 
+                                proveedores=proveedores)
+        
+        elif request.method == 'POST':
+            # Handle the form submission
+            numero_factura = request.form['numero_factura']
+            id_proveedor = request.form['id_proveedor']
+            total = request.form['total']
+            
+            FacturaFabricacion.actualizar_factura(numero_factura, id_proveedor, total, id)
+            
+            # Redirect to the list after successful update
+            return redirect(url_for('fabricante_ingredientes.mostrar_facturas'))
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return render_template('fabricante/listar_facturas.html', 
+                             ingredientes=[], 
+                             error="Error al procesar la factura")
+    

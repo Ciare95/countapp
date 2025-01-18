@@ -35,7 +35,7 @@ def crear_producto():
         if producto.crear_producto():
             flash("Producto creado correctamente.", "success")
         else:
-            flash("Error al crear el producto. Inténtalo de nuevo.", "error")
+            flash("Error al crear el producto. Inténtalo de nuevo.", "danger")
     return redirect(url_for('producto.listar_productos'))
 
 
@@ -56,7 +56,7 @@ def editar_producto(id):
         if producto.actualizar_producto():
             flash("Producto actualizado correctamente.", "success")
         else:
-            flash("Error al actualizar el producto. Inténtalo de nuevo.", "error")
+            flash("Error al actualizar el producto. Inténtalo de nuevo.", "danger")
     return redirect(url_for('producto.listar_productos'))
 
 
@@ -69,15 +69,15 @@ def eliminar_producto(id):
         if producto.eliminar_producto():
             flash("Producto eliminado correctamente.", "success")
         else:
-            flash("No se pudo eliminar el producto. Inténtalo de nuevo.", "error")
+            flash("No se pudo eliminar el producto. Tiene ventas relacionadas.", "danger")
     except Exception as e:
         if "foreign key constraint fails" in str(e).lower():
             flash(
                 "El producto no puede ser eliminado porque tiene relaciones activas con otras tablas.",
-                "error",
+                "danger",
             )
         else:
-            flash(f"Error inesperado: {str(e)}", "error")
+            flash(f"Error inesperado: {str(e)}", "danger")
     return redirect(url_for('producto.listar_productos'))
 
 
@@ -98,7 +98,7 @@ def buscar_producto(termino):
 
         return jsonify(productos)
     except Exception as e:
-        flash(f"Error al buscar el producto: {str(e)}", "error")
+        flash(f"Error al buscar el producto: {str(e)}", "danger")
         return jsonify({"error": str(e)}), 500
 
 
@@ -106,7 +106,7 @@ def buscar_producto(termino):
 def ingreso_producto():
     numero_factura = request.args.get('numero_factura')
     if not numero_factura:
-        flash('Número de factura no proporcionado', 'error')
+        flash('Número de factura no proporcionado', 'danger')
         return redirect(url_for('factura.lista_facturas'))
     
     return render_template('informes/ingreso_producto.html', numero_factura=numero_factura)

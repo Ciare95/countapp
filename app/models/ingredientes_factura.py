@@ -62,3 +62,5 @@ class IngredienteFactura:
             cursor.execute(query, (nombre, cantidad, costo_unitario, id_factura,))
             connection.commit()
         connection.close()
+        
+   

@@ -61,3 +61,40 @@ class FacturaFabricacion:
             cursor.execute(query, (numero_factura, id_proveedor, fecha, total))
             connection.commit()
         connection.close()
+
+
+    @staticmethod
+    def actualizar_factura(numero_factura, id_proveedor, total, id):
+        try:
+            query = """
+            UPDATE facturas_fabricacion
+            SET numero_factura = %s, id_proveedor = %s, total = %s
+            WHERE id = %s
+            """
+            connection = db.get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute(query, (numero_factura,id_proveedor, total, id))
+                connection.commit()
+            connection.close()
+        
+        except Exception as e:
+            print(f'Error {e}')
+            
+            
+    @staticmethod
+    def obtener_factura_por_id(id):
+        try:
+            query = """
+            SELECT * FROM facturas_fabricacion 
+            WHERE id = %s
+            """
+            connection = db.get_connection()
+            with connection.cursor(dictionary=True) as cursor:
+                cursor.execute(query, (id,))
+                factura = cursor.fetchone()
+            connection.close()
+            return factura
+        
+        except Exception as e:
+            print(f'Error {e}')
+            return None

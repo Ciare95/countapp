@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Actualizar Factura</h2>
+        <form action="{{ url_for('fabricante_ingredientes.actualizar_factura', id=factura.id) }}" method="POST">
+            <div class="mb-3">
+                <label for="numero_factura" class="form-label">Número de Factura</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="numero_factura"
+                    name="numero_factura"
+                    value="{{ factura.numero_factura }}"
+                    required
+                />
+            </div>
+        
+            <div class="mb-3">
+                <label for="id_proveedor" class="form-label">Proveedor</label>
+                <select
+                    class="form-select"
+                    id="id_proveedor"
+                    name="id_proveedor"
+                    required
+                >
+                    <option value="" disabled>Seleccione un proveedor</option>
+                    {% for proveedor in proveedores %}
+                        <option value="{{ proveedor.id }}" 
+                                {% if proveedor.id == factura.id_proveedor %}selected{% endif %}>
+                            {{ proveedor.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        
+            <div class="mb-3">
+                <label for="total" class="form-label">Total</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    class="form-control"
+                    id="total"
+                    name="total"
+                    value="{{ factura.total }}"
+                    required
+                />
+            </div>
+        
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Actualizar</button>
+                <a href="{{ url_for('fabricante_ingredientes.mostrar_facturas') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+
+
+{% endblock %}
