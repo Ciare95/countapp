@@ -8,9 +8,9 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="mb-0">Informe de Ingresos y Egresos</h2>
             <form class="d-flex gap-2" method="GET" action="/informes/ingresos_egresos">
-                <input type="date" name="fecha" id="fecha" class="form-control form-control-sm" value="{{ fecha }}" placeholder="Fecha">
-                <input type="month" name="mes" id="mes" class="form-control form-control-sm" value="{{ mes }}" placeholder="Mes">
-                <input type="number" name="anio" id="anio" class="form-control form-control-sm" value="{{ anio }}" min="2000" max="2100" placeholder="Año">
+                <input type="date" name="fecha" id="fecha" class="form-control form-control-sm" value="{{ fecha or '' }}" placeholder="Fecha">
+                <input type="month" name="mes" id="mes" class="form-control form-control-sm" value="{{ mes or '' }}" placeholder="Mes">
+                <input type="number" name="anio" id="anio" class="form-control form-control-sm" value="{{ anio or '' }}" min="2000" max="2100" placeholder="Año">
                 <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
                 <a href="/informes/ingresos_egresos" class="btn btn-secondary btn-sm">Hoy</a>
             </form>

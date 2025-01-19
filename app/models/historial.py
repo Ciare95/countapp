@@ -16,64 +16,58 @@ class HistorialModel:
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
-            # Query para obtener ventas individuales, incluyendo el nombre del usuario
+            # Query simplificada usando el total_venta directamente de la tabla ventas
             query_ventas = f"""
-                SELECT v.id AS id_venta, v.fecha_venta, 
-                    SUM(dv.cantidad * p.precio) AS total_venta, 
-                    v.estado, v.saldo, c.nombre AS cliente,
+                SELECT 
+                    v.id AS id_venta, 
+                    v.fecha_venta, 
+                    v.total_venta,
+                    v.estado, 
+                    v.saldo, 
+                    c.nombre AS cliente,
                     u.nombre AS usuario
                 FROM ventas v
-                JOIN detalle_ventas dv ON v.id = dv.id_ventas
-                JOIN productos p ON dv.id_productos = p.id
                 JOIN clientes c ON v.id_cliente = c.id
                 LEFT JOIN usuarios u ON v.id_usuarios = u.id
                 {where_clause}
-                GROUP BY v.id, v.fecha_venta, v.estado, v.saldo, c.nombre, u.nombre
                 ORDER BY v.fecha_venta DESC
             """
             
-            # Query para obtener totales
+            # Query para totales también simplificada
             query_totales = f"""
                 SELECT 
                     COALESCE(SUM(total_venta), 0) as total_ventas,
                     COALESCE(SUM(saldo), 0) as total_saldos
-                FROM (
-                    SELECT v.id, SUM(dv.cantidad * p.precio) as total_venta, v.saldo
-                    FROM ventas v
-                    JOIN detalle_ventas dv ON v.id = dv.id_ventas
-                    JOIN productos p ON dv.id_productos = p.id
-                    {where_clause}
-                    GROUP BY v.id, v.saldo
-                ) as subtotales
+                FROM ventas v
+                {where_clause}
             """
             
-            # Ejecutar queries
+            print("Query completa ventas:", query_ventas % (parametros or {}))
             cursor.execute(query_ventas, parametros or {})
             resultados = cursor.fetchall()
             
+            print("Query completa totales:", query_totales % (parametros or {}))
             cursor.execute(query_totales, parametros or {})
             totales = cursor.fetchone()
-            
+
             # Formatear resultados
             for resultado in resultados:
                 resultado['total_venta'] = HistorialModel.formato_peso_colombiano(resultado['total_venta'])
                 resultado['saldo'] = HistorialModel.formato_peso_colombiano(resultado['saldo'])
-                fecha = datetime.strptime(str(resultado['fecha_venta']), '%Y-%m-%d %H:%M:%S')
-                resultado['fecha_venta'] = fecha.strftime('%Y-%m-%d %H:%M')
+                # Mantener el formato de fecha y hora
+                if resultado['fecha_venta']:
+                    fecha = resultado['fecha_venta']
+                    resultado['fecha_venta'] = fecha.strftime('%Y-%m-%d %H:%M')
             
             total_ventas = totales.get('total_ventas', 0) or 0
             total_saldos = totales.get('total_saldos', 0) or 0
             total_neto = total_ventas - total_saldos
-
             
-            # Formatear totales
             totales_formateados = {
                 'total_ventas': HistorialModel.formato_peso_colombiano(total_ventas),
                 'total_saldos': HistorialModel.formato_peso_colombiano(total_saldos),
                 'total_neto': HistorialModel.formato_peso_colombiano(total_neto)
             }
-
-            
             
             return resultados, totales_formateados
         finally:

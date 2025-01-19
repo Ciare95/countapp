@@ -13,8 +13,8 @@ def historial_general():
         filtro_mes = request.args.get('mes')      # yyyy-mm
         filtro_anio = request.args.get('anio')    # yyyy
 
-        # Si no hay ningún filtro, usar la fecha actual por defecto
-        if not any([filtro_fecha, filtro_mes, filtro_anio]):
+        # Si no hay ningún filtro, usar la fecha actual
+        if not filtro_fecha and not filtro_mes and not filtro_anio:
             filtro_fecha = datetime.now().strftime('%Y-%m-%d')
 
         # Construcción de la cláusula WHERE y parámetros
@@ -25,34 +25,26 @@ def historial_general():
             condiciones.append("DATE(v.fecha_venta) = %(fecha)s")
             parametros['fecha'] = filtro_fecha
         elif filtro_mes:
+            mes = int(filtro_mes.split("-")[1])
+            anio = int(filtro_mes.split("-")[0])
             condiciones.append("MONTH(v.fecha_venta) = %(mes)s AND YEAR(v.fecha_venta) = %(anio_mes)s")
-            parametros['mes'] = int(filtro_mes.split("-")[1])
-            parametros['anio_mes'] = int(filtro_mes.split("-")[0])
+            parametros['mes'] = mes
+            parametros['anio_mes'] = anio
         elif filtro_anio:
             condiciones.append("YEAR(v.fecha_venta) = %(anio)s")
             parametros['anio'] = int(filtro_anio)
 
         where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
-
-        # Obtener las ventas filtradas
-        ventas = HistorialModel.obtener_ventas_generales(where_clause, parametros)
-
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify(ventas)
         
         # Obtener las ventas filtradas y totales
         ventas, totales = HistorialModel.obtener_ventas_generales(where_clause, parametros)
-
         
-
-        # Pasar valores a la plantilla
         return render_template('ventas/historial_general.html',
                     ventas=ventas,
                     totales=totales,
                     fecha=filtro_fecha,
                     mes=filtro_mes,
                     anio=filtro_anio)
-
 
     except Exception as e:
         print(f"Error al obtener el historial general de ventas: {e}")

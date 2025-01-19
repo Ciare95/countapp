@@ -3,48 +3,55 @@ from app.models.informe import InformeModel
 from app.models.facturas import FacturaModel
 from flask_login import login_required
 from app.controllers.usuario_controller import administrador_requerido
+from datetime import datetime
 
 informe_bp = Blueprint('informes', __name__)
 
 
 @informe_bp.route('/ingresos_egresos', methods=['GET'])
 @login_required
-@administrador_requerido  # Solo los administradores pueden acceder a esta ruta
+@administrador_requerido
 def ingresos_egresos():
     try:
         # Obtener filtros de fecha
         filtro_fecha = request.args.get('fecha')  # yyyy-mm-dd
-        filtro_mes = request.args.get('mes')  # yyyy-mm
-        filtro_anio = request.args.get('anio')  # yyyy
+        filtro_mes = request.args.get('mes')      # yyyy-mm
+        filtro_anio = request.args.get('anio')    # yyyy
+
+        # Si no hay ningún filtro, usar la fecha actual
+        if not filtro_fecha and not filtro_mes and not filtro_anio:
+            filtro_fecha = datetime.now().strftime('%Y-%m-%d')
 
         # Construcción de la cláusula WHERE y parámetros
         condiciones = []
         parametros = {}
 
         if filtro_fecha:
-            condiciones.append("DATE(v.fecha_venta) = %(fecha)s")
+            condiciones.append("DATE(fecha_registro) = %(fecha)s")
             parametros['fecha'] = filtro_fecha
         elif filtro_mes:
-            condiciones.append("MONTH(v.fecha_venta) = %(mes)s AND YEAR(v.fecha_venta) = %(anio_mes)s")
-            parametros['mes'] = int(filtro_mes.split("-")[1])
-            parametros['anio_mes'] = int(filtro_mes.split("-")[0])
+            mes = int(filtro_mes.split("-")[1])
+            anio = int(filtro_mes.split("-")[0])
+            condiciones.append("MONTH(fecha_registro) = %(mes)s AND YEAR(fecha_registro) = %(anio_mes)s")
+            parametros['mes'] = mes
+            parametros['anio_mes'] = anio
         elif filtro_anio:
-            condiciones.append("YEAR(v.fecha_venta) = %(anio)s")
+            condiciones.append("YEAR(fecha_registro) = %(anio)s")
             parametros['anio'] = int(filtro_anio)
 
         where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
-
+        
         # Obtener datos del modelo
         total_ingresos = InformeModel.obtener_ingresos(where_clause, parametros)
         total_egresos = InformeModel.obtener_egresos(where_clause, parametros)
 
+        # Convertir los valores a float antes de la operación
+        ingresos_valor = float(total_ingresos.replace('$', '').replace('.', '').replace(',', '.'))
+        egresos_valor = float(total_egresos.replace('$', '').replace('.', '').replace(',', '.'))
+        
         # Calcular ganancia neta
-        ganancia_neta = float(total_ingresos.replace('$', '').replace('.', '').replace(',', '.')) - float(total_egresos.replace('$', '').replace('.', '').replace(',', '.'))
+        ganancia_neta = InformeModel.formato_peso_colombiano(ingresos_valor - egresos_valor)
 
-        # Formatear la ganancia neta
-        ganancia_neta = InformeModel.formato_peso_colombiano(ganancia_neta)
-
-        # Renderizar plantilla
         return render_template('informes/ingresos_egresos.html',
                             total_egresos=total_egresos,
                             total_ingresos=total_ingresos,
@@ -55,6 +62,7 @@ def ingresos_egresos():
     except Exception as e:
         print(f"Error al obtener ingresos y egresos: {e}")
         return "Error interno", 500
+
 
 
 @informe_bp.route('/registro_ingresos', methods=['GET'])
