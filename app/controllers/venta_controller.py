@@ -14,102 +14,96 @@ def formato_peso_colombiano(valor):
 
 @venta_bp.route('/crear', methods=['POST'])
 def crear_venta():
-    data = request.json
-    productos = data.get('productos')
-    total = data.get('total')
-    id_cliente = data.get('id_cliente')
-    estado = data.get('estado', 'pendiente')
-    saldo = total if estado != 'cancelada' else 0
-    monto_abono = float(data.get('monto_abono', 0))
+   data = request.json
+   productos = data.get('productos')
+   total = data.get('total')
+   id_cliente = data.get('id_cliente')
+   estado = data.get('estado', 'pendiente')
+   saldo = total if estado != 'cancelada' else 0
+   monto_abono = float(data.get('monto_abono', 0))
 
-    # Obtener el ID del usuario actual
-    id_usuario = current_user.id if hasattr(current_user, 'id') else data.get('id_usuario')
-    if not id_usuario:
-        return jsonify({
-            'error': 'El ID del usuario es obligatorio.',
-            'message': 'El ID del usuario es obligatorio.',
-            'category': 'danger'
-        }), 400
+   id_usuario = current_user.id if hasattr(current_user, 'id') else data.get('id_usuario')
+   if not id_usuario:
+       return jsonify({
+           'error': 'El ID del usuario es obligatorio.',
+           'message': 'El ID del usuario es obligatorio.',
+           'category': 'danger'
+       }), 400
 
-    if not productos:
-        return jsonify({
-            'error': 'No se enviaron productos.',
-            'message': 'No se enviaron productos.',
-            'category': 'danger'
-        }), 400
+   if not productos:
+       return jsonify({
+           'error': 'No se enviaron productos.',
+           'message': 'No se enviaron productos.',
+           'category': 'danger'
+       }), 400
 
-    if not id_cliente:
-        return jsonify({
-            'error': 'El campo id_cliente es obligatorio.',
-            'message': 'El campo id_cliente es obligatorio.',
-            'category': 'danger'
-        }), 400
+   if not id_cliente:
+       return jsonify({
+           'error': 'El campo id_cliente es obligatorio.',
+           'message': 'El campo id_cliente es obligatorio.',
+           'category': 'danger'
+       }), 400
 
-    connection = connection_pool.get_connection()
-    cursor = connection.cursor()
+   connection = connection_pool.get_connection()
+   cursor = connection.cursor()
 
-    try:
-        # Inserta la venta con el ID del usuario
-        cursor.execute(
-            """
-            INSERT INTO ventas (fecha_venta, total_venta, id_cliente, id_usuarios, estado, saldo)
-            VALUES (NOW(), %s, %s, %s, %s, %s)
-            """,
-            (total, id_cliente, id_usuario, estado, saldo)
-        )
-        connection.commit()
-        id_venta = cursor.lastrowid
+   try:
+       cursor.execute(
+           """
+           INSERT INTO ventas (fecha_venta, total_venta, id_cliente, id_usuarios, estado, saldo)
+           VALUES (NOW(), %s, %s, %s, %s, %s)
+           """,
+           (total, id_cliente, id_usuario, estado, saldo)
+       )
+       connection.commit()
+       id_venta = cursor.lastrowid
 
-        # Inserta los detalles de la venta
-        for producto in productos:
-            id_producto = producto['id']
-            cantidad = producto['cantidad']
-            
-        # Registrar abono inicial si el monto es mayor a 0
-        if monto_abono > 0:
-            AbonoModel.registrar_abono(id_venta, monto_abono)
-            nuevo_saldo = saldo - monto_abono
-            nuevo_estado = 'cancelada' if nuevo_saldo == 0 else 'pendiente'
-            AbonoModel.actualizar_saldo(id_venta, nuevo_saldo, nuevo_estado)
+       for producto in productos:
+           id_producto = producto['id']
+           cantidad = producto['cantidad']
+           
+           cursor.execute("SELECT stock FROM productos WHERE id = %s", (id_producto,))
+           stock_actual = cursor.fetchone()
+           if not stock_actual or stock_actual[0] < cantidad:
+               raise ValueError(f"Stock insuficiente para el producto con id {id_producto}.")
 
-            # Verifica el stock
-            cursor.execute("SELECT stock FROM productos WHERE id = %s", (id_producto,))
-            stock_actual = cursor.fetchone()
-            if not stock_actual or stock_actual[0] < cantidad:
-                raise ValueError(f"Stock insuficiente para el producto con id {id_producto}.")
+           cursor.execute("UPDATE productos SET stock = stock - %s WHERE id = %s", (cantidad, id_producto))
 
-            # Descuenta del stock del producto
-            cursor.execute("UPDATE productos SET stock = stock - %s WHERE id = %s", (cantidad, id_producto))
+           cursor.execute(
+               """
+               INSERT INTO detalle_ventas (id_ventas, id_productos, id_clientes, id_usuarios, cantidad)
+               VALUES (%s, %s, %s, %s, %s)
+               """,
+               (id_venta, id_producto, id_cliente, id_usuario, cantidad)
+           )
 
-            # Guarda el detalle de la venta
-            cursor.execute(
-                """
-                INSERT INTO detalle_ventas (id_ventas, id_productos, id_clientes, id_usuarios, cantidad)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (id_venta, id_producto, id_cliente, id_usuario, cantidad)
-            )
+       if monto_abono > 0:
+           AbonoModel.registrar_abono(id_venta, monto_abono)
+           nuevo_saldo = saldo - monto_abono
+           nuevo_estado = 'cancelada' if nuevo_saldo == 0 else 'pendiente'
+           AbonoModel.actualizar_saldo(id_venta, nuevo_saldo, nuevo_estado)
 
-        connection.commit()
+       connection.commit()
 
-        return jsonify({
-            'success': True,
-            'message': 'Venta creada exitosamente.',
-            'category': 'success',
-            'id_venta': id_venta
-        }), 200
+       return jsonify({
+           'success': True,
+           'message': 'Venta creada exitosamente.',
+           'category': 'success',
+           'id_venta': id_venta
+       }), 200
 
-    except Exception as e:
-        connection.rollback()
-        return jsonify({
-            'error': str(e),
-            'message': f"Error al crear la venta: {str(e)}",
-            'category': 'danger'
-        }), 500
+   except Exception as e:
+       connection.rollback()
+       return jsonify({
+           'error': str(e),
+           'message': f"Error al crear la venta: {str(e)}",
+           'category': 'danger'
+       }), 500
 
-    finally:
-        cursor.close()
-        connection.close()
+   finally:
+       cursor.close()
+       connection.close()
+       
 
 @venta_bp.route('/', methods=['GET'])
 def listar_ventas():
@@ -270,11 +264,16 @@ def generar_factura_pdf(id_venta):
 
         venta['detalles'] = detalles
         venta['abonos'] = abonos
+        
+        print("Detalles encontrados:", detalles)
+
 
         # Renderizar el template HTML incluyendo el negocio
         html = render_template(
             'ventas/factura.html',
             venta=venta,
+            detalles=detalles,  # Pasarlo como variable separada
+            abonos=abonos,
             negocio=negocio
         )
 

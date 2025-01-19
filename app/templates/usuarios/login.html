@@ -8,20 +8,18 @@
     <style>
         body {
             margin: 0;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
-            overflow: hidden;
+            flex-direction: column;
         }
         .left-section {
             background-color: #ffffff;
-            width: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         .right-section {
             background-color: #343a40;
-            width: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -45,42 +43,49 @@
         }
     </style>
 </head>
-<body>
-    <div class="left-section">
-        <img src="{{ url_for('static', filename='img/logo_ciare.png') }}" alt="Logo Ciare" style="max-width: 30%; height: auto;">
-    </div>
-    <div class="right-section">
-        <div class="login-card">
-            <h3 class="text-center mb-4 text-secondary">CountApp</h3>
-            
-            <!-- Bloque para mostrar mensajes flash -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="container mt-3 flash-message">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<body class="d-flex flex-column">
+    <div class="container-fluid vh-100">
+        <div class="row h-100">
+            <!-- Sección izquierda -->
+            <div class="col-12 col-md-6 left-section p-3">
+                <img src="{{ url_for('static', filename='img/logo_ciare.png') }}" alt="Logo Ciare" class="img-fluid" style="max-width: 50%; height: auto;">
+            </div>
+
+            <!-- Sección derecha -->
+            <div class="col-12 col-md-6 right-section p-3">
+                <div class="login-card">
+                    <h3 class="text-center mb-4 text-secondary">CountApp</h3>
+                    
+                    <!-- Bloque para mostrar mensajes flash -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="container mt-3 flash-message">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('usuario.login') }}">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label text-secondary">Usuario</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
                         </div>
-                    {% endfor %}
-                    </div>
-                {% endif %}
-                {% endwith %}
-
-
-            <form method="POST" action="{{ url_for('usuario.login') }}">
-                <div class="mb-3">
-                    <label for="nombre" class="form-label text-secondary">Usuario</label>
-                    <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        <div class="mb-3">
+                            <label for="password" class="form-label text-secondary">Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100">Iniciar sesión</button>
+                    </form>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label text-secondary">Contraseña</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                </div>
-                <button type="submit" class="btn btn-dark w-100">Iniciar sesión</button>
-            </form>
+            </div>
         </div>
     </div>
+
     <script>
         // Seleccionar todos los mensajes flash
         const flashMessages = document.querySelectorAll('.flash-message');
