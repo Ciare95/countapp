@@ -93,10 +93,9 @@ function seleccionarProducto(producto) {
 
 function actualizarTabla() {
     const tbody = document.getElementById('productos-tabla');
-    tbody.innerHTML = ''; // Limpiar la tabla
+    tbody.innerHTML = '';
     let total = 0;
 
-    // Verificar si el carrito está vacío
     if (carrito.length === 0) {
         const noProductosRow = document.createElement('tr');
         const noProductosCell = document.createElement('td');
@@ -105,11 +104,10 @@ function actualizarTabla() {
         noProductosCell.innerText = 'No hay productos en la tabla';
         noProductosRow.appendChild(noProductosCell);
         tbody.appendChild(noProductosRow);
-        document.getElementById('precioTotal').value = "$ 0.00"; // Resetear el precio total
-        return; // Salir de la función si el carrito está vacío
+        document.getElementById('precioTotal').value = "$ 0.00";
+        return;
     }
 
-    // Si hay productos en el carrito, agregar las filas a la tabla
     carrito.forEach((item, index) => {
         const subtotal = item.precio * item.cantidad;
         const tr = document.createElement('tr');
@@ -120,7 +118,10 @@ function actualizarTabla() {
                 <input type="number" class="form-control form-control-sm" value="${item.cantidad}" 
                     min="1" data-index="${index}" onchange="actualizarCantidad(event)">
             </td>
-            <td class="text-start">$ ${formatoPesoColombianoJS(item.precio)}</td>
+            <td>
+                <input type="number" class="form-control form-control-sm" value="${item.precio}" 
+                    min="0" step="100" data-index="${index}" onchange="actualizarPrecio(event)">
+            </td>
             <td class="text-start">$ ${formatoPesoColombianoJS(subtotal)}</td>
             <td>
                 <button class="btn btn-danger btn-sm" onclick="eliminarProducto(${index})">Quitar</button>
@@ -130,8 +131,21 @@ function actualizarTabla() {
         total += subtotal;
     });
 
-    // Actualizar el precio total
     document.getElementById('precioTotal').value = `$ ${formatoPesoColombianoJS(total)}`;
+}
+
+// Nueva función para manejar cambios en el precio
+function actualizarPrecio(event) {
+    const index = event.target.getAttribute('data-index');
+    const nuevoPrecio = parseFloat(event.target.value);
+    
+    if (isNaN(nuevoPrecio) || nuevoPrecio < 0) {
+        event.target.value = carrito[index].precio;
+        return;
+    }
+    
+    carrito[index].precio = nuevoPrecio;
+    actualizarTabla();
 }
 
 // Después de insertar los productos en la tabla con JavaScript

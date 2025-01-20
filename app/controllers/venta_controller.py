@@ -104,10 +104,12 @@ def crear_venta():
        cursor.close()
        connection.close()
        
+       
 
 @venta_bp.route('/', methods=['GET'])
 def listar_ventas():
     return render_template('ventas/historial_general.html')
+
 
 @venta_bp.route('/asociar-cliente', methods=['POST'])
 def asociar_cliente():

@@ -320,14 +320,18 @@
     }
 
     const actualizarPrecioCompraFinal = () => {
-            const precioCompra = parseFloat(document.getElementById('precio_unitario').value);
-            const porcentajeIva = parseFloat(document.getElementById('porcentaje_iva').value) || 0;
-            const porcentajeTransporte = parseFloat(document.getElementById('porcentaje_transporte').value) || 0;
-            if (!isNaN(precioCompra)) {
-                const precioFinal = precioCompra * (1 + porcentajeIva/100 + porcentajeTransporte/100);
-                document.getElementById('precio_compra_final').value = precioFinal.toFixed(2);
-            }
-        };
+        const precioCompra = parseFloat(document.getElementById('precio_unitario').value);
+        const porcentajeIva = parseFloat(document.getElementById('porcentaje_iva').value) || 0;
+        const porcentajeTransporte = parseFloat(document.getElementById('porcentaje_transporte').value) || 0;
+
+        if (!isNaN(precioCompra)) {
+            // Se agrega el porcentaje de transporte como multiplicación separada
+            const precioConIva = precioCompra * (1 + porcentajeIva / 100);
+            const precioFinal = precioConIva * (1 + porcentajeTransporte / 100);
+            document.getElementById('precio_compra_final').value = precioFinal.toFixed(2);
+        }
+    };
+
 
 // Agregar el evento input a los campos relevantes
 document.getElementById('precio_unitario').addEventListener('input', actualizarPrecioCompraFinal);

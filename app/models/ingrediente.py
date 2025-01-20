@@ -50,7 +50,7 @@ class Ingrediente:
 
     @staticmethod
     def obtener_todos():
-        query = "SELECT * FROM ingredientes"
+        query = "SELECT * FROM ingredientes ORDER BY nombre ASC"
         connection = db.get_connection()
         with connection.cursor(dictionary=True) as cursor:
             cursor.execute(query)
