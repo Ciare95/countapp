@@ -109,7 +109,7 @@
                             <th>Ingrediente</th>
                             <th>Cantidad</th>
                             <th>Unidad</th>
-                            <th>Precio Unitario</th>
+                            <th>Precio Unitario (Con IVA y transporte)</th>
                             <th>Subtotal</th>
                             <th>IVA</th>
                             <th>Transporte</th>
@@ -379,14 +379,17 @@ document.getElementById('porcentaje_transporte').addEventListener('input', actua
 
         const iva = (subtotal * porcentajeIVA) / 100;
         const transporte = (subtotal * porcentajeTransporte) / 100;
-        const costoFinal = subtotal + iva + transporte;
+        const costoFinal = (subtotal + iva) * (1 + porcentajeTransporte / 100);
+
+        // Calcular el precio unitario ajustado
+        const precioUnitarioAjustado = precioUnitarioNum * (1 + porcentajeIVA / 100) * (1 + porcentajeTransporte / 100);
 
         // Crear FormData con todos los datos
         const serverFormData = new FormData();
         serverFormData.append('id_factura', document.querySelector('input[name="id_factura"]').value); // Agregar id_factura
         serverFormData.append('id_ingrediente', idIngrediente);
         serverFormData.append('cantidad', cantidad);
-        serverFormData.append('precio_unitario', precioUnitario);
+        serverFormData.append('precio_unitario', precioUnitarioAjustado); 
         serverFormData.append('unidad_medida', formData.get('unidad_medida'));
         serverFormData.append('iva', iva);
         serverFormData.append('transporte', transporte);

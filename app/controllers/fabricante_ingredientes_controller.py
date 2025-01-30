@@ -265,6 +265,7 @@ def agregar_ingrediente_factura():
     try:
         connection = db.get_connection()
         with connection.cursor() as cursor:
+            # Verificar si la factura existe
             check_query = "SELECT id FROM facturas_fabricacion WHERE id = %s"
             cursor.execute(check_query, (request.form['id_factura'],))
             if not cursor.fetchone():
@@ -276,6 +277,7 @@ def agregar_ingrediente_factura():
             transporte = float(request.form['transporte'])
             costo_final = float(request.form['costo_final'])
             
+            # Insertar el ingrediente en la factura
             query = """
             INSERT INTO ingredientes_factura 
             (id_factura, id_ingrediente, cantidad, precio_unitario, 
@@ -295,11 +297,12 @@ def agregar_ingrediente_factura():
             
             inserted_id = cursor.lastrowid
             
-            # Get the generated subtotal
+            # Obtener el subtotal generado
             get_subtotal_query = "SELECT subtotal FROM ingredientes_factura WHERE id = %s"
             cursor.execute(get_subtotal_query, (inserted_id,))
             subtotal = cursor.fetchone()[0]
             
+            # Actualizar el total de la factura
             update_total_query = """
             UPDATE facturas_fabricacion 
             SET total = COALESCE((
@@ -312,6 +315,17 @@ def agregar_ingrediente_factura():
             cursor.execute(update_total_query, (
                 request.form['id_factura'],
                 request.form['id_factura']
+            ))
+            
+            # Actualizar el costo_factura en la tabla ingredientes_producto
+            update_costo_factura_query = """
+            UPDATE ingredientes_producto
+            SET costo_factura = %s
+            WHERE ingrediente_id = %s
+            """
+            cursor.execute(update_costo_factura_query, (
+                precio_unitario,
+                request.form['id_ingrediente']
             ))
             
             connection.commit()
@@ -330,7 +344,6 @@ def agregar_ingrediente_factura():
     finally:
         if connection:
             connection.close()
-
 
 
 @fabricante_ingredientes_bp.route('/mostrar_facturas')
@@ -522,3 +535,13 @@ def actualizar_factura(id):
                              ingredientes=[], 
                              error="Error al procesar la factura")
     
+    
+@fabricante_ingredientes_bp.route('/eliminar_ingrediente_producto/<int:ingrediente_id>', methods=['DELETE'])
+def eliminar_ingrediente_producto(ingrediente_id):
+    try:
+        data = request.get_json()
+        producto_id = data.get('producto_id')
+        IngredienteProducto.eliminar_ingrediente(producto_id, ingrediente_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})

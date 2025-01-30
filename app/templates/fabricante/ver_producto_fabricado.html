@@ -83,6 +83,9 @@
                             Cancelar
                         </button>
                     </div>
+                    <button class="btn btn-danger btn-sm remove-button" data-producto-id="{{ producto.id }}" data-ingrediente-id="{{ ingrediente.id }}">
+                        Quitar
+                    </button>
                 </td>
             </tr>
             {% endfor %}
@@ -98,12 +101,13 @@
                     <input type="number" 
                         id="costoEmpaque" 
                         class="form-control" 
-                        value="{{ ingredientes[0].costo_empaque }}"  
+                        value="{{ ingredientes[0].costo_empaque if ingredientes|length > 0 else 0 }}"  
                         min="0" 
                         step="0.01" 
                         onchange="actualizarCostoEmpaque('{{ producto.id }}'); actualizarCostoTotal()">
                 </div>
             </div>
+            
             
         </div>
         <div class="col-md-6">
@@ -116,6 +120,15 @@
 </div>
 
     <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calcular costos para cada fila al cargar la página
+        document.querySelectorAll('tbody tr').forEach(row => {
+            calculateCost(row);
+        });
+
+        // Actualizar el costo total
+        actualizarCostoTotal();
+    });
         // Función para validar que todos los campos requeridos estén completos
         function validateRow(row) {
             const validationData = {
@@ -265,13 +278,20 @@
             });
             row.querySelector('.edit-button').classList.toggle('d-none', editMode);
             row.querySelector('.save-cancel-buttons').classList.toggle('d-none', !editMode);
+
+            // Vincular eventos a los campos editables
+            if (editMode) {
+                row.querySelectorAll('.edit-input').forEach(input => {
+                    input.addEventListener('input', () => calculateCost(row));
+                });
+            }
         }
 
         function calculateCost(row) {
-            const costoFactura = parseFloat(row.querySelector('input[name="costo_factura"]').value) || 0;
-            const cantidadIng = parseFloat(row.querySelector('input[name="cantidad_ing"]').value) || 0;
-            const unidadMedida = row.querySelector('select[name="unidad_medida"]').value;
-            const cantidadFactura = row.querySelector('select[name="cantidad_factura"]').value;
+            const costoFactura = parseFloat(row.querySelector('input[name="costo_factura"]')?.value || row.querySelector('.display-value').textContent) || 0;
+            const cantidadIng = parseFloat(row.querySelector('input[name="cantidad_ing"]')?.value || row.querySelector('td:nth-child(4) .display-value').textContent) || 0;
+            const unidadMedida = row.querySelector('select[name="unidad_medida"]')?.value || row.querySelector('td:nth-child(5) .display-value').textContent;
+            const cantidadFactura = row.querySelector('select[name="cantidad_factura"]')?.value || row.querySelector('td:nth-child(3) .display-value').textContent;
 
             // Validación de valores
             if (costoFactura <= 0 || cantidadIng <= 0 || !unidadMedida || !cantidadFactura) {
@@ -280,15 +300,15 @@
             }
 
             try {
-                // Convertimos la cantidad del ingrediente a la unidad de la factura
+                // Convertir la cantidad del ingrediente a la unidad de la factura
                 const cantidadConvertida = convertirUnidades(cantidadIng, unidadMedida, cantidadFactura);
                 if (cantidadConvertida === null) {
                     throw new Error("Error en la conversión de unidades");
                 }
-                
-                // Calculamos el costo por producto basado en la cantidad convertida
+
+                // Calcular el costo por producto basado en la cantidad convertida
                 const costoPorProducto = (costoFactura * cantidadConvertida).toFixed(2);
-                
+
                 row.querySelector('.costo-producto span').textContent = costoPorProducto;
                 actualizarCostoTotal();
             } catch (error) {
@@ -307,12 +327,6 @@
                 alert('Por favor corrija los siguientes errores:\n' + validation.errors.join('\n'));
                 return;
             }
-
-            // Debug: Mostrar datos que se enviarán
-            console.log('Datos a enviar:');
-            validation.formData.forEach((value, key) => {
-                console.log(`${key}: ${value}`);
-            });
 
             // Enviar datos al servidor
             fetch('{{ url_for("fabricante_ingredientes.editar") }}', {
@@ -335,10 +349,13 @@
                             displaySpan.textContent = input.value;
                         }
                     });
-                    
-                    toggleEditMode(row, false);
+
+                    // Recalcular costos
+                    calculateCost(row);
                     actualizarCostoTotal();
-                    
+
+                    toggleEditMode(row, false);
+
                     // Mostrar mensaje de éxito
                     const alert = document.createElement('div');
                     alert.className = 'alert alert-success alert-dismissible fade show mt-2';
@@ -347,7 +364,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     `;
                     row.closest('.container').insertBefore(alert, row.closest('table'));
-                    
+
                     // Auto-ocultar el mensaje después de 3 segundos
                     setTimeout(() => {
                         alert.remove();
@@ -356,7 +373,7 @@
             })
             .catch(error => {
                 const errorMessage = error.message || 'Error al actualizar el ingrediente';
-                
+
                 // Mostrar mensaje de error
                 const alert = document.createElement('div');
                 alert.className = 'alert alert-danger alert-dismissible fade show mt-2';
@@ -365,7 +382,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 `;
                 row.closest('.container').insertBefore(alert, row.closest('table'));
-                
+
                 console.error('Error:', error);
             });
         }
@@ -519,6 +536,42 @@
                 document.getElementById('costoEmpaque').closest('.container').insertBefore(alert, document.getElementById('costoEmpaque').closest('.row'));
             });
         }
+        document.addEventListener('DOMContentLoaded', function () {
+        // Seleccionar todos los botones "Quitar"
+        const removeButtons = document.querySelectorAll('.remove-button');
+
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const productoId = this.getAttribute('data-producto-id');
+                const ingredienteId = this.getAttribute('data-ingrediente-id');
+
+                if (confirm('¿Estás seguro de que deseas quitar este ingrediente?')) {
+                    fetch(`/fabricante_ingredientes/eliminar_ingrediente_producto/${ingredienteId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ producto_id: productoId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Eliminar la fila de la tabla o actualizar la interfaz
+                            const row = this.closest('tr');
+                            row.remove();
+                            alert('Ingrediente eliminado correctamente');
+                        } else {
+                            alert('Error al eliminar el ingrediente: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error al eliminar el ingrediente');
+                    });
+                }
+            });
+        });
+    });
 
     </script>
 

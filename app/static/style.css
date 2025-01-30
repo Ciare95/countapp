@@ -101,3 +101,11 @@ tr.oculto {
     border-bottom-left-radius: 0.375rem;
     border-bottom-right-radius: 0.375rem;
 }
+
+#precioTotal {
+    font-size: 1.5rem; /* Tamaño de fuente más grande */
+    color: #28a745; /* Color verde para resaltar */
+    border: 2px solid #28a745; /* Borde verde */
+    background-color: #f8f9fa !important;
+}
+
