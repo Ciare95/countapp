@@ -59,23 +59,34 @@ def crear_venta():
        id_venta = cursor.lastrowid
 
        for producto in productos:
-           id_producto = producto['id']
-           cantidad = producto['cantidad']
-           
-           cursor.execute("SELECT stock FROM productos WHERE id = %s", (id_producto,))
-           stock_actual = cursor.fetchone()
-           if not stock_actual or stock_actual[0] < cantidad:
-               raise ValueError(f"Stock insuficiente para el producto con id {id_producto}.")
-
-           cursor.execute("UPDATE productos SET stock = stock - %s WHERE id = %s", (cantidad, id_producto))
-
-           cursor.execute(
-               """
-               INSERT INTO detalle_ventas (id_ventas, id_productos, id_clientes, id_usuarios, cantidad)
-               VALUES (%s, %s, %s, %s, %s)
-               """,
-               (id_venta, id_producto, id_cliente, id_usuario, cantidad)
-           )
+        id_producto = producto['id']
+        cantidad = producto['cantidad']
+        
+        # Obtener información del producto
+        cursor.execute("SELECT stock, es_servicio FROM productos WHERE id = %s", (id_producto,))
+        resultado = cursor.fetchone()
+        
+        if not resultado:
+            raise ValueError(f"El producto con id {id_producto} no existe.")
+        
+        stock_actual, es_servicio = resultado
+        
+        # Si no es un servicio, verificar y actualizar el stock
+        if es_servicio == 0:  # 0 significa que no es un servicio (producto físico)
+            if stock_actual is None or stock_actual < cantidad:
+                raise ValueError(f"Stock insuficiente para el producto con id {id_producto}.")
+            
+            # Actualizar el stock solo si no es un servicio
+            cursor.execute("UPDATE productos SET stock = stock - %s WHERE id = %s", (cantidad, id_producto))
+        
+        # Insertar el detalle de la venta (tanto para productos como servicios)
+        cursor.execute(
+            """
+            INSERT INTO detalle_ventas (id_ventas, id_productos, id_clientes, id_usuarios, cantidad)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (id_venta, id_producto, id_cliente, id_usuario, cantidad)
+        )
 
        if monto_abono > 0:
            AbonoModel.registrar_abono(id_venta, monto_abono)

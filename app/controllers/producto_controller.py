@@ -28,16 +28,16 @@ def crear_producto():
         producto = Producto()
         producto.nombre = request.form['nombre']
         producto.id_categorias = request.form['categoria']
-        producto.cantidad = request.form['stock']
+        producto.es_servicio = 'es_servicio' in request.form
+        producto.cantidad = None if producto.es_servicio else request.form['stock']
         producto.precio_compra = request.form['precio_compra']
         producto.precio = request.form['precio']
         
         if producto.crear_producto():
-            flash("Producto creado correctamente.", "success")
+            flash("Producto/Servicio creado correctamente.", "success")
         else:
-            flash("Error al crear el producto. Inténtalo de nuevo.", "danger")
+            flash("Error al crear el producto/servicio. Inténtalo de nuevo.", "danger")
     return redirect(url_for('producto.listar_productos'))
-
 
 @producto_bp.route("/editar/<int:id>", methods=['GET', 'POST'])
 @login_required
@@ -49,14 +49,15 @@ def editar_producto(id):
     if request.method == 'POST':
         producto.nombre = request.form['nombre']
         producto.id_categorias = request.form['categoria']
-        producto.cantidad = request.form['stock']
+        producto.es_servicio = 'es_servicio' in request.form
+        producto.cantidad = None if producto.es_servicio else request.form['stock']
         producto.precio_compra = request.form['precio_compra']
         producto.precio = request.form['precio']
         
         if producto.actualizar_producto():
-            flash("Producto actualizado correctamente.", "success")
+            flash("Producto/Servicio actualizado correctamente.", "success")
         else:
-            flash("Error al actualizar el producto. Inténtalo de nuevo.", "danger")
+            flash("Error al actualizar el producto/servicio. Inténtalo de nuevo.", "danger")
     return redirect(url_for('producto.listar_productos'))
 
 

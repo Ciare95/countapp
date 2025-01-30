@@ -2,7 +2,7 @@ from app.db import connection_pool
 
 
 class Producto:
-    def __init__(self, id=None, nombre=None, id_categorias=None, precio=None, cantidad=None, precio_compra=None, ganancia_neta=None, rentabilidad=None):
+    def __init__(self, id=None, nombre=None, id_categorias=None, precio=None, cantidad=None, precio_compra=None, ganancia_neta=None, rentabilidad=None, es_servicio=False):
         self.id = id
         self.nombre = nombre
         self.id_categorias = id_categorias
@@ -11,6 +11,8 @@ class Producto:
         self.cantidad = cantidad
         self.ganancia_neta = ganancia_neta,
         self.rentabilidad = rentabilidad
+        self.es_servicio = es_servicio
+
         
     def formato_peso_colombiano(valor):
         if valor is None:
@@ -23,10 +25,11 @@ class Producto:
         try:
             cursor = conexion.cursor()
             sql = """INSERT INTO productos 
-                    (nombre, id_categorias, stock, precio, precio_compra) 
-                    VALUES (%s, %s, %s, %s, %s)"""
-            valores = (self.nombre, self.id_categorias, self.cantidad, 
-                    self.precio, self.precio_compra)
+                    (nombre, id_categorias, stock, precio, precio_compra, es_servicio) 
+                    VALUES (%s, %s, %s, %s, %s, %s)"""
+            valores = (self.nombre, self.id_categorias, 
+                      None if self.es_servicio else self.cantidad,
+                      self.precio, self.precio_compra, self.es_servicio)
             cursor.execute(sql, valores)
             conexion.commit()
             return True
@@ -45,8 +48,19 @@ class Producto:
         cursor = None
         try:
             cursor = conexion.cursor()
-            sql = "UPDATE productos SET nombre = %s, id_categorias = %s, stock = %s, precio = %s, precio_compra = %s WHERE id = %s"
-            cursor.execute(sql, (self.nombre, self.id_categorias, self.cantidad, self.precio, self.precio_compra, self.id))
+            sql = """UPDATE productos 
+                     SET nombre = %s, id_categorias = %s, stock = %s, 
+                         precio = %s, precio_compra = %s, es_servicio = %s 
+                     WHERE id = %s"""
+            cursor.execute(sql, (
+                self.nombre, 
+                self.id_categorias, 
+                None if self.es_servicio else self.cantidad,
+                self.precio, 
+                self.precio_compra,
+                self.es_servicio,
+                self.id
+            ))
             conexion.commit()
             return True
         except Exception as e:
@@ -56,7 +70,7 @@ class Producto:
             if cursor:
                 cursor.close()
             conexion.close()
-
+            
 
     def obtener_por_id(self, id):
         conexion = connection_pool.get_connection()

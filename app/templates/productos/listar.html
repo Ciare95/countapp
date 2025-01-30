@@ -70,7 +70,7 @@
                 <td>${{ producto.precio }}</td>
                 <td>${{ producto.ganancia_neta }}</td>
                 <td>{{ producto.rentabilidad }}</td>
-                <td>{{ producto.stock }}</td>
+                <td>{% if producto.es_servicio %}N/A{% else %}{{ producto.stock }}{% endif %}</td>
                 <td class="bg-dark text-white">
                     <button class="btn text-white hover-effect btn-editar" 
                         data-id="{{ producto.id }}" 
@@ -78,7 +78,8 @@
                         data-categoria="{{ producto.categoria_id }}" 
                         data-precio="{{ producto.precio }}" 
                         data-precio-compra="{{ producto.precio_compra }}" 
-                        data-stock="{{ producto.stock }}">
+                        data-stock="{{ producto.stock }}"
+                        data-es-servicio="{{ producto.es_servicio|lower }}">
                         Editar
                     </button>
                     <form action="{{ url_for('producto.eliminar_producto', id=producto.id) }}" method="POST" style="display:inline;">
@@ -97,13 +98,22 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Crear Producto</h5>
+                    <h5 class="modal-title">Crear Producto/Servicio</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form method="POST" action="{{ url_for('producto.crear_producto') }}">
                         <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre del Producto</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="es_servicio" id="crear-es-servicio">
+                                <label class="form-check-label" for="crear-es-servicio">
+                                    Es un servicio
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre del <span class="tipo-item">Producto</span></label>
                             <input type="text" class="form-control" name="nombre" id="crear-nombre" required>
                         </div>
 
@@ -119,23 +129,25 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="precio_compra" class="form-label">Precio de Compra</label>
+                            <label for="precio_compra" class="form-label">Precio de Compra/Costo Base</label>
                             <input type="number" class="form-control" name="precio_compra" id="crear-precio-compra" step="0.01" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="porcentaje_iva" class="form-label">Porcentaje de IVA (%)</label>
-                            <input type="number" class="form-control" id="crear-porcentaje-iva" step="0.01" value="0">
-                        </div>
+                        <div class="campos-producto">
+                            <div class="mb-3">
+                                <label for="porcentaje_iva" class="form-label">Porcentaje de IVA (%)</label>
+                                <input type="number" class="form-control" id="crear-porcentaje-iva" step="0.01" value="0">
+                            </div>
 
-                        <div class="mb-3">
-                            <label for="porcentaje_transporte" class="form-label">Porcentaje de Transporte (%)</label>
-                            <input type="number" class="form-control" id="crear-porcentaje-transporte" step="0.01" value="0">
-                        </div>
+                            <div class="mb-3">
+                                <label for="porcentaje_transporte" class="form-label">Porcentaje de Transporte (%)</label>
+                                <input type="number" class="form-control" id="crear-porcentaje-transporte" step="0.01" value="0">
+                            </div>
 
-                        <div class="mb-3">
-                            <label for="precio_compra_final" class="form-label">Precio de Compra Final (con IVA y Transporte)</label>
-                            <input type="text" class="form-control" id="crear-precio-compra-final" disabled>
+                            <div class="mb-3">
+                                <label for="precio_compra_final" class="form-label">Precio de Compra Final (con IVA y Transporte)</label>
+                                <input type="text" class="form-control" id="crear-precio-compra-final" disabled>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -143,14 +155,14 @@
                             <input type="number" class="form-control" name="precio" id="crear-precio" step="0.01" required>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-3 campos-producto">
                             <label for="stock" class="form-label">Stock</label>
                             <input type="number" class="form-control" name="stock" id="crear-stock" required>
                         </div>
 
                         <div class="text-end mt-3">
                             <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Crear Producto</button>
+                            <button type="submit" class="btn btn-primary">Crear</button>
                         </div>
                     </form>
                 </div>
@@ -219,13 +231,40 @@
             // Inicializar modales
             const modalCrear = new bootstrap.Modal(document.getElementById("modal-crear"));
             const modalEditar = new bootstrap.Modal(document.getElementById("modal-editar"));
-    
+
             // Botón para abrir el modal de creación
             const btnCrear = document.getElementById("btn-crear");
-            btnCrear.addEventListener("click", () => {
-                modalCrear.show();
+            if (btnCrear) {
+                btnCrear.addEventListener("click", () => modalCrear.show());
+            }
+
+            // Función para manejar la visibilidad de campos según tipo
+            function toggleCamposProducto(esServicio, modalId) {
+                const prefix = modalId === 'crear' ? 'crear-' : 'editar-';
+                const camposProducto = document.querySelectorAll(`#modal-${modalId} .campos-producto`);
+                const stockInput = document.getElementById(`${prefix}stock`);
+                const tipoItems = document.querySelectorAll(`#modal-${modalId} .tipo-item`);
+                
+                camposProducto.forEach(campo => campo.style.display = esServicio ? 'none' : 'block');
+                
+                if (esServicio) {
+                    stockInput.removeAttribute('required');
+                    stockInput.value = '';
+                    tipoItems.forEach(item => item.textContent = 'Servicio');
+                } else {
+                    stockInput.setAttribute('required', 'required');
+                    tipoItems.forEach(item => item.textContent = 'Producto');
+                }
+            }
+
+            // Event listeners para checkbox de servicio
+            ['crear', 'editar'].forEach(modalId => {
+                const checkbox = document.getElementById(`${modalId}-es-servicio`);
+                if (checkbox) {
+                    checkbox.addEventListener('change', (e) => toggleCamposProducto(e.target.checked, modalId));
+                }
             });
-    
+
             // Botones para abrir el modal de edición
             const btnsEditar = document.querySelectorAll(".btn-editar");
             btnsEditar.forEach(btn => {
@@ -233,133 +272,90 @@
                     const id = btn.dataset.id;
                     const nombre = btn.dataset.nombre;
                     const categoria = btn.dataset.categoria;
-                    // Eliminar el símbolo $ y convertir a número
                     const precio = parseFloat(btn.dataset.precio.replace('$', '').replace(/\./g, ''));
                     const precioCompra = parseFloat(btn.dataset.precioCompra.replace('$', '').replace(/\./g, ''));
                     const stock = btn.dataset.stock;
+                    const esServicio = btn.dataset.esServicio === 'true';
 
-                    // Actualizar la URL del formulario
                     const form = document.getElementById("editar-form");
                     form.action = form.action.replace('/0', `/${id}`);
 
-                    // Establecer los valores en el formulario
                     document.getElementById("editar-id").value = id;
                     document.getElementById("editar-nombre").value = nombre;
                     document.getElementById("editar-categoria").value = categoria;
                     document.getElementById("editar-precio").value = formatAsCurrency(precio);
                     document.getElementById("editar-precio-compra").value = formatAsCurrency(precioCompra);
                     document.getElementById("editar-stock").value = stock;
-
+                    document.getElementById("editar-es-servicio").checked = esServicio;
+                    
+                    toggleCamposProducto(esServicio, 'editar');
                     modalEditar.show();
                 });
             });
-    
-            // Formatear valores de precio y precio de compra al cargar la página
-            const precioField = document.getElementById("editar-precio");
-            const precioCompraField = document.getElementById("editar-precio-compra");
-            if (precioField && precioCompraField) {
-                precioField.value = formatAsCurrency(parseFloat(precioField.value) || 0);
-                precioCompraField.value = formatAsCurrency(parseFloat(precioCompraField.value) || 0);
-            }
-        });
-    
-        // Función para confirmar eliminación
-        function confirmarEliminacion() {
-            return confirm("¿Estás seguro de que deseas eliminar este producto?");
-        }
-    
-        // Función para calcular precio de compra final
-        const calcularPrecioCompraFinal = (precioCompra, porcentajeIVA, porcentajeTransporte) => {
-            const iva = (precioCompra * porcentajeIVA) / 100;
-            const transporte = (precioCompra * porcentajeTransporte) / 100;
-            return precioCompra + iva + transporte;
-        };
-    
-        // Actualizar el precio de compra final al cambiar los valores
-        const actualizarPrecioCompraFinal = () => {
-            const precioCompra = parseFloat(document.getElementById('crear-precio-compra').value) || 0;
-            const porcentajeIVA = parseFloat(document.getElementById('crear-porcentaje-iva').value) || 0;
-            const porcentajeTransporte = parseFloat(document.getElementById('crear-porcentaje-transporte').value) || 0;
-    
-            const precioCompraFinal = calcularPrecioCompraFinal(precioCompra, porcentajeIVA, porcentajeTransporte);
-            document.getElementById('crear-precio-compra-final').value = precioCompraFinal.toFixed(2);
-        };
-    
-        document.getElementById('crear-precio-compra').addEventListener('input', actualizarPrecioCompraFinal);
-        document.getElementById('crear-porcentaje-iva').addEventListener('input', actualizarPrecioCompraFinal);
-        document.getElementById('crear-porcentaje-transporte').addEventListener('input', actualizarPrecioCompraFinal);
-    
-        // Función para formatear los números como moneda
-        const formatAsCurrency = (value) => {
-            return new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(value);
-        };
-    
-        // Función para convertir string de moneda a número
-        const currencyToNumber = (currencyString) => {
-            return parseFloat(currencyString
-                .replace(/[^\d,.-]/g, '') // Eliminar símbolo de moneda y caracteres no numéricos
-                .replace(/\./g, '')      // Eliminar puntos de miles
-                .replace(',', '.'));     // Reemplazar coma decimal por punto
-        };
-    
-        // Antes de enviar el formulario, convertir valores formateados a números
-        document.getElementById("editar-form").addEventListener("submit", (event) => {
-            const precioField = document.getElementById("editar-precio");
-            const precioCompraField = document.getElementById("editar-precio-compra");
-    
-            precioField.value = currencyToNumber(precioField.value);
-            precioCompraField.value = currencyToNumber(precioCompraField.value);
-        });
-        // Seleccionar todos los mensajes flash
-        const flashMessages = document.querySelectorAll('.flash-message');
-        // Configurar un temporizador para cada mensaje
-        flashMessages.forEach(message => {
-            setTimeout(() => {
-                // Usar fade-out para una transición suave
-                message.classList.remove('show');
-                message.classList.add('fade');
-                setTimeout(() => message.remove(), 300); // Remover después de la transición
-            }, 3000); // 3 segundos
-        });
-        document.addEventListener('DOMContentLoaded', function() {
-            const buscador = document.getElementById('buscador');
-            const tabla = document.querySelector('table tbody');
-            const filas = tabla.getElementsByTagName('tr');
 
-            buscador.addEventListener('keyup', function() {
-                const termino = buscador.value.toLowerCase().trim();
-
-                for (let fila of filas) {
-                    const nombreProducto = fila.cells[0].textContent.toLowerCase();
-                    const categoria = fila.cells[1].textContent.toLowerCase();
-                    
-                    if (nombreProducto.includes(termino) || categoria.includes(termino)) {
-                        fila.style.display = '';
-                    } else {
-                        fila.style.display = 'none';
-                    }
+            // Modificar la validación del formulario
+            ['crear', 'editar'].forEach(modalId => {
+                const form = document.getElementById(`${modalId}-form`);
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        const esServicio = document.getElementById(`${modalId}-es-servicio`).checked;
+                        const stockInput = document.getElementById(`${modalId}-stock`);
+                        if (esServicio) {
+                            stockInput.value = '0';
+                        }
+                        document.getElementById(`${modalId}-precio`).value = currencyToNumber(document.getElementById(`${modalId}-precio`).value);
+                        document.getElementById(`${modalId}-precio-compra`).value = currencyToNumber(document.getElementById(`${modalId}-precio-compra`).value);
+                    });
                 }
             });
 
-            // Función para limpiar el buscador
-            function limpiarBuscador() {
-                buscador.value = '';
-                for (let fila of filas) {
-                    fila.style.display = '';
-                }
+            // Función para formatear valores como moneda
+            const formatAsCurrency = (value) => {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(value);
+            };
+
+            // Función para convertir string de moneda a número
+            const currencyToNumber = (currencyString) => {
+                return parseFloat(currencyString.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'));
+            };
+
+            // Buscador en la tabla
+            const buscador = document.getElementById('buscador');
+            if (buscador) {
+                const tabla = document.querySelector('table tbody');
+                const filas = tabla.getElementsByTagName('tr');
+
+                buscador.addEventListener('keyup', function() {
+                    const termino = buscador.value.toLowerCase().trim();
+                    for (let fila of filas) {
+                        const nombreProducto = fila.cells[0].textContent.toLowerCase();
+                        const categoria = fila.cells[1].textContent.toLowerCase();
+                        fila.style.display = (nombreProducto.includes(termino) || categoria.includes(termino)) ? '' : 'none';
+                    }
+                });
+
+                buscador.insertAdjacentHTML('afterend', '<button class="btn btn-outline-secondary" type="button" id="limpiar-busqueda">Limpiar</button>');
+                document.getElementById('limpiar-busqueda').addEventListener('click', () => {
+                    buscador.value = '';
+                    for (let fila of filas) fila.style.display = '';
+                });
             }
 
-            // Opcional: Agregar botón para limpiar la búsqueda
-            buscador.insertAdjacentHTML('afterend', 
-                '<button class="btn btn-outline-secondary" type="button" id="limpiar-busqueda">Limpiar</button>');
-            
-            document.getElementById('limpiar-busqueda').addEventListener('click', limpiarBuscador);
+            // Mensajes flash con auto-cierre
+            document.querySelectorAll('.flash-message').forEach(message => {
+                setTimeout(() => {
+                    message.classList.remove('show');
+                    message.classList.add('fade');
+                    setTimeout(() => message.remove(), 300);
+                }, 3000);
+            });
         });
+
     </script>
     
 {% endblock %}
