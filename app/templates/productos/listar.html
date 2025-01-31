@@ -178,6 +178,10 @@
                     <h5 class="modal-title">Editar Producto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="mb-3">
+                    <label for="editar-es-servicio" class="form-label">¿Es un servicio?</label>
+                    <input type="checkbox" class="form-check-input" id="editar-es-servicio" name="es_servicio">
+                </div>                
                 <div class="modal-body">
                     <form method="POST" id="editar-form" action="{{ url_for('producto.editar_producto', id=0) }}">
                         <input type="hidden" name="id" id="editar-id">
