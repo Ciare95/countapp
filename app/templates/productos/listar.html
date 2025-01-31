@@ -62,32 +62,38 @@
             </tr>
         </thead>
         <tbody>
-            {% for producto in productos %}
-            <tr>
-                <td>{{ producto.producto_nombre }}</td>
-                <td>{{ producto.categoria_nombre }}</td>
-                <td>${{ producto.precio_compra }}</td>
-                <td>${{ producto.precio }}</td>
-                <td>${{ producto.ganancia_neta }}</td>
-                <td>{{ producto.rentabilidad }}</td>
-                <td>{% if producto.es_servicio %}N/A{% else %}{{ producto.stock }}{% endif %}</td>
-                <td class="bg-dark text-white">
-                    <button class="btn text-white hover-effect btn-editar" 
-                        data-id="{{ producto.id }}" 
-                        data-nombre="{{ producto.producto_nombre }}" 
-                        data-categoria="{{ producto.categoria_id }}" 
-                        data-precio="{{ producto.precio }}" 
-                        data-precio-compra="{{ producto.precio_compra }}" 
-                        data-stock="{{ producto.stock }}"
-                        data-es-servicio="{{ producto.es_servicio|lower }}">
-                        Editar
-                    </button>
-                    <form action="{{ url_for('producto.eliminar_producto', id=producto.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn text-white hover-effect" onclick="return confirmarEliminacion()">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
+            {% if productos %}
+                {% for producto in productos %}
+                <tr>
+                    <td>{{ producto.producto_nombre }}</td>
+                    <td>{{ producto.categoria_nombre }}</td>
+                    <td>${{ producto.precio_compra }}</td>
+                    <td>${{ producto.precio }}</td>
+                    <td>${{ producto.ganancia_neta }}</td>
+                    <td>{{ producto.rentabilidad }}</td>
+                    <td>{% if producto.es_servicio %}N/A{% else %}{{ producto.stock }}{% endif %}</td>
+                    <td class="bg-dark text-white">
+                        <button class="btn text-white hover-effect btn-editar" 
+                            data-id="{{ producto.id }}" 
+                            data-nombre="{{ producto.producto_nombre }}" 
+                            data-categoria="{{ producto.categoria_id }}" 
+                            data-precio="{{ producto.precio }}" 
+                            data-precio-compra="{{ producto.precio_compra }}" 
+                            data-stock="{{ producto.stock }}"
+                            data-es-servicio="{{ producto.es_servicio|lower }}">
+                            Editar
+                        </button>
+                        <form action="{{ url_for('producto.eliminar_producto', id=producto.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn text-white hover-effect" onclick="return confirmarEliminacion()">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" class="text-center">No hay productos registrados.</td>
+                </tr>
+            {% endif %}
         </tbody>
     </table>
 

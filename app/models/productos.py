@@ -124,13 +124,17 @@ class Producto:
             cursor.execute(sql)
             resultados = cursor.fetchall()
             
-
             def formato_peso_colombiano(valor):
                 if valor is None:
                     return "0"
                 return f"{'{:,.0f}'.format(float(valor)).replace(',', '.')}"
             
             productos = []
+            
+            # Si no hay resultados, retorna lista vacía y rentabilidad cero
+            if not resultados:
+                return productos, "0.00%"
+            
             for resultado in resultados:
                 producto = {
                     'id': resultado[0],
@@ -152,7 +156,7 @@ class Producto:
         
         except Exception as e:
             print(f"Error al obtener productos: {e}")
-            return []
+            return [], "0.00%"  # Retorna lista vacía y rentabilidad cero en caso de error
         finally:
             if cursor:
                 cursor.close()
