@@ -104,7 +104,7 @@ function actualizarTabla() {
         noProductosCell.innerText = 'No hay productos en la tabla';
         noProductosRow.appendChild(noProductosCell);
         tbody.appendChild(noProductosRow);
-        document.getElementById('precioTotal').value = "$ 0.00";
+        document.getElementById('precioTotal').value = "0.00";
         return;
     }
 
@@ -122,7 +122,7 @@ function actualizarTabla() {
                 <input type="number" class="form-control form-control-sm" value="${item.precio}" 
                     min="0" step="100" data-index="${index}" onchange="actualizarPrecio(event)">
             </td>
-            <td class="text-start">$ ${formatoPesoColombianoJS(subtotal)}</td>
+            <td class="text-start">${formatoPesoColombianoJS(subtotal)}</td>
             <td>
                 <button class="btn btn-danger btn-sm" onclick="eliminarProducto(${index})">Quitar</button>
             </td>
@@ -131,8 +131,49 @@ function actualizarTabla() {
         total += subtotal;
     });
 
-    document.getElementById('precioTotal').value = `$ ${formatoPesoColombianoJS(total)}`;
+    document.getElementById('precioTotal').value = `${formatoPesoColombianoJS(total)}`;
 }
+
+function formatoPesoColombianoJS(valor) {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(valor);
+}
+
+// Modificar la función de transacción
+document.getElementById('transaccion').addEventListener('click', function() {
+    // Obtener el precio total
+    const precioTotal = document.getElementById('precioTotal').value;
+    
+    // Mostrar el precio total en el modal
+    document.getElementById('precioTotalModal').value = precioTotal;
+    
+    // Limpiar campos de monto pagado y cambio
+    document.getElementById('montoPagado').value = '';
+    document.getElementById('cambio').value = '';
+    
+    // Mostrar el modal
+    const transaccionModal = new bootstrap.Modal(document.getElementById('transaccionModal'));
+    transaccionModal.show();
+});
+
+// Agregar evento de escucha para calcular cambio automáticamente
+document.getElementById('montoPagado').addEventListener('input', function() {
+    // Limpiar el valor del precio total de caracteres no numéricos
+    const precioTotal = parseFloat(document.getElementById('precioTotalModal').value.replace(/[^\d]/g, '')) / 100;
+    const montoPagado = parseFloat(this.value);
+
+    if (isNaN(montoPagado)) {
+        document.getElementById('cambio').value = '';
+        return;
+    }
+
+    if (montoPagado < precioTotal) {
+        document.getElementById('cambio').value = 'Monto insuficiente';
+        return;
+    }
+
+    const cambio = montoPagado - precioTotal;
+    document.getElementById('cambio').value = `${formatoPesoColombianoJS(cambio)}`;
+});
 
 // Nueva función para manejar cambios en el precio
 function actualizarPrecio(event) {
@@ -175,7 +216,75 @@ function actualizarCantidad(event) {
     actualizarTabla();
 }
 
-document.getElementById('crearVenta').addEventListener('click', async () => {
+document.getElementById('guardarVentaModal').addEventListener('click', async () => {
+    const clienteId = Number(document.getElementById('cliente-select').value);
+    const estado = document.getElementById('estado-input').value;
+    const montoPagado = parseFloat(document.getElementById('montoPagado').value);
+    const total = carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+    const montoAbono = total; // Cambio clave: el abono es exactamente el total
+    const saldo = 0; // El saldo es 0 porque se paga completamente
+
+    if (!clienteId || clienteId === '') {
+        showFlashMessage('Por favor, selecciona un cliente', 'danger');
+        return;
+    }
+
+    if (carrito.length === 0) {
+        showFlashMessage('Por favor, selecciona productos antes de crear la venta', 'danger');
+        return;
+    }
+
+    if (montoPagado < total) {
+        showFlashMessage('El monto pagado debe ser igual o mayor al total de la venta', 'danger');
+        return;
+    }
+
+    try {
+        const response = await fetch('/ventas/crear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id_cliente: clienteId,
+                productos: carrito,
+                total: total,
+                estado: estado,
+                saldo: saldo,
+                monto_abono: montoAbono,
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Error al crear la venta');
+        }
+
+        showFlashMessage(data.message, data.category);
+
+        if (data.success) {
+            // Cerrar modal
+            const transaccionModal = bootstrap.Modal.getInstance(document.getElementById('transaccionModal'));
+            transaccionModal.hide();
+
+            // Limpiar formulario y carrito
+            carrito = [];
+            actualizarTabla();
+            document.getElementById('producto').value = '';
+            document.getElementById('cliente-select').value = '';
+            document.getElementById('estado-input').value = 'pendiente';
+            document.getElementById('monto-abono').value = '';
+
+            console.log('Venta creada con ID:', data.id_venta);
+        }
+
+    } catch (error) {
+        showFlashMessage(error.message, 'danger');
+    }
+});
+
+document.getElementById('crearVentaDirecta').addEventListener('click', async () => {
     const clienteId = Number(document.getElementById('cliente-select').value);
     const estado = document.getElementById('estado-input').value;
     const montoAbono = parseFloat(document.getElementById('monto-abono').value) || 0;

@@ -348,23 +348,32 @@
                         fila.style.display = (nombreProducto.includes(termino) || categoria.includes(termino)) ? '' : 'none';
                     }
                 });
-
-                buscador.insertAdjacentHTML('afterend', '<button class="btn btn-outline-secondary" type="button" id="limpiar-busqueda">Limpiar</button>');
-                document.getElementById('limpiar-busqueda').addEventListener('click', () => {
-                    buscador.value = '';
-                    for (let fila of filas) fila.style.display = '';
-                });
             }
 
-            // Mensajes flash con auto-cierre
-            document.querySelectorAll('.flash-message').forEach(message => {
-                setTimeout(() => {
-                    message.classList.remove('show');
-                    message.classList.add('fade');
-                    setTimeout(() => message.remove(), 300);
-                }, 3000);
-            });
+            // Cálculo del precio de compra final
+            const precioCompraInput = document.getElementById('crear-precio-compra');
+            const porcentajeIvaInput = document.getElementById('crear-porcentaje-iva');
+            const porcentajeTransporteInput = document.getElementById('crear-porcentaje-transporte');
+            const precioCompraFinalInput = document.getElementById('crear-precio-compra-final');
+
+            function calcularPrecioCompraFinal() {
+                const precioCompra = parseFloat(precioCompraInput.value) || 0;
+                const porcentajeIva = parseFloat(porcentajeIvaInput.value) || 0;
+                const porcentajeTransporte = parseFloat(porcentajeTransporteInput.value) || 0;
+
+                const valorIva = precioCompra * (porcentajeIva / 100);
+                const valorTransporte = precioCompra * (porcentajeTransporte / 100);
+                const precioCompraFinal = precioCompra + valorIva + valorTransporte;
+
+                precioCompraFinalInput.value = formatAsCurrency(precioCompraFinal);
+            }
+
+            // Agregar eventos para recalcular el precio de compra final
+            precioCompraInput.addEventListener('input', calcularPrecioCompraFinal);
+            porcentajeIvaInput.addEventListener('input', calcularPrecioCompraFinal);
+            porcentajeTransporteInput.addEventListener('input', calcularPrecioCompraFinal);
         });
+
 
     </script>
     

@@ -35,11 +35,12 @@
             <label for="precioTotal" class="form-label">Precio Total:</label>
             <input type="text" id="precioTotal" class="form-control form-control-lg fw-bold text-center bg-light total-price" readonly value="$0.00">
         </div>
-        <div class="col-4 col-sm-2 d-grid">
-            <label class="form-label">&nbsp;</label>
-            <button type="button" id="crearVenta" class="btn btn-primary btn-sm mt-2">Guardar Venta</button>
+        <div class="col-4 col-sm-2 d-flex flex-column justify-content-end">
+            <button type="button" id="transaccion" class="btn btn-outline-warning btn-sm mb-1">Transacción</button>
+            <button type="button" id="crearVentaDirecta" class="btn btn-primary btn-sm">Guardar Venta</button>
         </div>
     </div>
+    
 </div>
 
 <div class="container-fluid p-3">
@@ -73,6 +74,42 @@
                 <!-- Los productos se insertarán aquí dinámicamente desde JavaScript -->
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Modificar el HTML para incluir el modal de transacción -->
+<div class="modal fade" id="transaccionModal" tabindex="-1" aria-labelledby="transaccionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transaccionModalLabel">Procesar Transacción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col">
+                        <label for="precioTotalModal" class="form-label">Precio Total:</label>
+                        <input type="text" id="precioTotalModal" class="form-control form-control-lg fw-bold text-center" readonly>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label for="montoPagado" class="form-label">Monto Pagado:</label>
+                        <input type="number" id="montoPagado" class="form-control form-control-lg" placeholder="Ingrese el monto pagado">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label for="cambio" class="form-label">Cambio:</label>
+                        <input type="text" id="cambio" class="form-control form-control-lg fw-bold text-center" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="guardarVentaModal" class="btn btn-primary">Guardar Venta</button>
+            </div>
+        </div>
     </div>
 </div>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
