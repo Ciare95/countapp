@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, render_template, flash, make_response
 from flask_login import current_user
+from datetime import datetime
 from app.models.abonos import AbonoModel
 import pdfkit
 from app.db import connection_pool
@@ -316,3 +317,50 @@ def generar_factura_pdf(id_venta):
     finally:
         cursor.close()
         conexion.close()
+        
+
+@venta_bp.route('/ventas_categoria')
+def ventas_categoria():
+    connection = connection_pool.get_connection()
+    cursor = connection.cursor(dictionary=True)
+    
+    # Get filter parameters or use current date as default
+    fecha = request.args.get('fecha', datetime.now().strftime('%Y-%m-%d'))
+    mes = request.args.get('mes')
+    anio = request.args.get('anio')
+    
+    # Base query
+    query = """
+    SELECT 
+        c.nombre as categoria, 
+        COUNT(DISTINCT v.id) as total_ventas,
+        SUM(p.precio * dv.cantidad) as monto_total
+    FROM categorias c
+    JOIN productos p ON c.id = p.id_categorias
+    JOIN detalle_ventas dv ON p.id = dv.id_productos
+    JOIN ventas v ON dv.id_ventas = v.id
+    WHERE DATE(v.fecha_venta) = %s
+    GROUP BY c.id, c.nombre
+    """
+    
+    params = [fecha]
+    
+    # Modify query if mes or anio are specified
+    if mes:
+        query = query.replace("DATE(v.fecha_venta) = %s", "DATE_FORMAT(v.fecha_venta, '%Y-%m') = %s")
+        params = [mes]
+    elif anio:
+        query = query.replace("DATE(v.fecha_venta) = %s", "YEAR(v.fecha_venta) = %s")
+        params = [anio]
+    
+    cursor.execute(query, params)
+    ventas_categoria = cursor.fetchall()
+    
+    cursor.close()
+    connection.close()
+    
+    return render_template('ventas/ventas_categoria.html', 
+                         ventas_categoria=ventas_categoria,
+                         fecha=fecha,
+                         mes=mes,
+                         anio=anio)
