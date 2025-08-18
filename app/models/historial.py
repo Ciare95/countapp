@@ -16,6 +16,13 @@ class HistorialModel:
         cursor = None
         try:
             cursor = connection.cursor()
+            # Verificar parámetros con logging detallado
+            print(f"Parámetros recibidos en modelo: {parametros} (tipo: {type(parametros)})")
+            if parametros is not None:
+                if not isinstance(parametros, (tuple, list)):
+                    raise ValueError(f"Los parámetros deben ser una tupla o lista, no {type(parametros)}")
+                print(f"Parámetros validados: {parametros}")
+                
             # Query simplificada usando el total_venta directamente de la tabla ventas
             query_ventas = f"""
                 SELECT 

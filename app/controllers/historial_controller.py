@@ -35,15 +35,26 @@ def historial_general():
 
         where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
         
-        # Obtener las ventas filtradas y totales
-        ventas, totales = HistorialModel.obtener_ventas_generales(where_clause, tuple(parametros))
-        
-        return render_template('ventas/historial_general.html',
+        # Validación y logging de parámetros
+        print(f"Parámetros antes de pasar al modelo: {parametros}")
+        if not all(isinstance(p, (str, int, float)) for p in parametros):
+            raise ValueError("Los parámetros contienen tipos no válidos")
+            
+        try:
+            # Obtener las ventas filtradas y totales
+            parametros_tuple = tuple(parametros)
+            print(f"Parámetros convertidos a tupla: {parametros_tuple}")
+            ventas, totales = HistorialModel.obtener_ventas_generales(where_clause, parametros_tuple)
+            
+            return render_template('ventas/historial_general.html',
                     ventas=ventas,
                     totales=totales,
                     fecha=filtro_fecha,
                     mes=filtro_mes,
                     anio=filtro_anio)
+        except Exception as e:
+            print(f"Error al obtener el historial general de ventas: {e}")
+            return "Error interno", 500
 
     except Exception as e:
         print(f"Error al obtener el historial general de ventas: {e}")
