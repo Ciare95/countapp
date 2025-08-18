@@ -101,9 +101,45 @@ def ensure_roles_exist(pool):
         logger.error(traceback.format_exc())
         raise
 
+def initialize_schema():
+    """Checks if the schema is initialized and creates it if not."""
+    conn = None
+    try:
+        logger.debug("Verifying database schema...")
+        conn = psycopg2.connect(
+            host=dbconfig['host'],
+            user=dbconfig['user'],
+            password=dbconfig['password'],
+            database=dbconfig['database'],
+            port=dbconfig['port']
+        )
+        cursor = conn.cursor()
+
+        # Check if 'rol' table exists
+        cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'rol');")
+        table_exists = cursor.fetchone()[0]
+
+        if not table_exists:
+            logger.info("Schema not found. Initializing database...")
+            with open('schema.sql', 'r') as f:
+                cursor.execute(f.read())
+            conn.commit()
+            logger.info("Database initialized successfully.")
+        else:
+            logger.debug("Database schema already initialized.")
+
+    except Exception as e:
+        logger.error("Error initializing schema:")
+        logger.error(traceback.format_exc())
+        raise
+    finally:
+        if conn:
+            conn.close()
+
 # Crear el pool de conexiones
 try:
     logger.debug("=== Iniciando proceso de conexión (Postgres) ===")
+    initialize_schema()
     connection_pool = create_pool()
     ensure_roles_exist(connection_pool)
 except Exception as e:
