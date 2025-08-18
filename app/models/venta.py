@@ -11,7 +11,7 @@ class Venta:
             
 
     def crear_venta(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -28,12 +28,13 @@ class Venta:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
 
     @staticmethod
     def obtener_ventas():
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -100,13 +101,14 @@ class Venta:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
             
     
     @staticmethod
     def agregar_abono(id_venta, monto):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -119,11 +121,12 @@ class Venta:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
     @staticmethod
     def obtener_abonos(id_venta):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -136,12 +139,13 @@ class Venta:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
         
     
     @staticmethod
     def procesar_abono(id_cliente, monto):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor(dictionary=True)
@@ -196,12 +200,13 @@ class Venta:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
             
     @staticmethod
     def obtener_ventas_por_cliente(cliente_id):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -264,8 +269,5 @@ class Venta:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
-
-
-            
-            
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)

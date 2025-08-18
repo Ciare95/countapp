@@ -20,7 +20,7 @@ class FacturaModel:
         # Eliminar espacios en blanco del número de la factura
         numero_factura = numero_factura.replace(" ", "")  # Elimina todos los espacios
         
-        connection = mysql.get_connection()  # Obtener conexión desde la pool
+        connection = mysql.getconn()  # Obtener conexión desde la pool
         cur = connection.cursor()
         try:
             cur.execute("""
@@ -31,12 +31,13 @@ class FacturaModel:
             return cur.lastrowid
         finally:
             cur.close()
-            connection.close()  # Liberar conexión
+            if 'connection' in locals():
+                mysql.putconn(connection)
 
 
     @classmethod
     def agregar_producto_a_factura(cls, id_factura, id_producto, cantidad, precio_compra, precio_venta, porcentaje_iva):
-        connection = mysql.get_connection()  # Obtener conexión desde la pool
+        connection = mysql.getconn()  # Obtener conexión desde la pool
         cursor = connection.cursor()
         try:
             # Verificar si el producto ya está en la factura
@@ -73,13 +74,13 @@ class FacturaModel:
         finally:
             cursor.close()
             if 'connection' in locals():
-                connection.close()  # Liberar conexión
+                mysql.putconn(connection)
 
 
 
     @staticmethod
     def obtener_todas_las_facturas():
-        connection = mysql.get_connection()
+        connection = mysql.getconn()
         cur = connection.cursor(dictionary=True)
         try:
             cur.execute("""
@@ -95,11 +96,12 @@ class FacturaModel:
             return facturas
         finally:
             cur.close()
-            connection.close()
+            if 'connection' in locals():
+                mysql.putconn(connection)
 
     @staticmethod
     def obtener_id_por_numero_factura(numero_factura):
-        connection = mysql.get_connection()
+        connection = mysql.getconn()
         cur = connection.cursor()
         try:
             cur.execute("""
@@ -109,12 +111,13 @@ class FacturaModel:
             return resultado[0] if resultado else None
         finally:
             cur.close()
-            connection.close()
+            if 'connection' in locals():
+                mysql.putconn(connection)
            
             
     @staticmethod
     def obtener_productos_factura(numero_factura):
-        conection = mysql.get_connection()
+        conection = mysql.getconn()
         cursor = conection.cursor(dictionary=True)
         try:
             sql = """
@@ -160,4 +163,4 @@ class FacturaModel:
             if cursor:
                 cursor.close()
             if conection:
-                conection.close()
+                mysql.putconn(conection)

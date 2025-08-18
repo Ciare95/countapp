@@ -3,7 +3,7 @@ from app.db import connection_pool
 class ProveedorModel:
     @staticmethod
     def obtener_proveedores():
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -14,11 +14,12 @@ class ProveedorModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
 
     @staticmethod
     def crear_proveedor(nombre, nit, telefono):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -32,11 +33,12 @@ class ProveedorModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
 
     @staticmethod
     def actualizar_proveedor(id, nombre, nit, telefono):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -50,11 +52,12 @@ class ProveedorModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
 
     @staticmethod
     def eliminar_proveedor(id):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -79,5 +82,5 @@ class ProveedorModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
-
+            if 'connection' in locals():
+                connection_pool.putconn(connection)

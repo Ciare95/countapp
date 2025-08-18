@@ -20,7 +20,7 @@ class Producto:
         return f"{'{:,.0f}'.format(float(valor)).replace(',', '.')}"
 
     def crear_producto(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -39,12 +39,13 @@ class Producto:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
     def actualizar_producto(self):
         if not self.id:
             return False
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -69,11 +70,12 @@ class Producto:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
 
     def obtener_por_id(self, id):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -95,10 +97,11 @@ class Producto:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
     def obtener_todos(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -160,14 +163,15 @@ class Producto:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
             
 
     def eliminar_producto(self):
         if not self.id:
             return False
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -182,11 +186,12 @@ class Producto:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
             
     def buscar_por_nombre_o_id(self, query):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -220,11 +225,12 @@ class Producto:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
 
     def obtener_por_categoria(self, categoria_id):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -261,4 +267,5 @@ class Producto:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)

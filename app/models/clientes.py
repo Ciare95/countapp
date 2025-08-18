@@ -10,7 +10,7 @@ class Cliente:
         
         
     def obtener_por_id(self, id):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -30,11 +30,12 @@ class Cliente:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
             
     def crear_cliente(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -57,11 +58,12 @@ class Cliente:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
                   
     def obtener_clientes(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         clientes = []
         
@@ -84,12 +86,13 @@ class Cliente:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
         return clientes
     
     def editar_cliente(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -103,11 +106,12 @@ class Cliente:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
     
     def eliminar_cliente(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -128,4 +132,5 @@ class Cliente:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)

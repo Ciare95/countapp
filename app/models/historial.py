@@ -12,7 +12,7 @@ class HistorialModel:
 
     @staticmethod
     def obtener_ventas_generales(where_clause="", parametros=None):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
@@ -73,12 +73,13 @@ class HistorialModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
 
             
     @staticmethod
     def obtener_ventas_por_cliente(cliente_id, estado='todas'):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
@@ -135,5 +136,5 @@ class HistorialModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
-
+            if 'connection' in locals():
+                connection_pool.putconn(connection)

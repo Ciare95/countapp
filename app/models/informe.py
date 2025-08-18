@@ -10,7 +10,7 @@ class InformeModel:
     
     @staticmethod
     def obtener_ingresos(where_clause="", parametros=None):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
@@ -35,11 +35,12 @@ class InformeModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
 
     @staticmethod
     def obtener_egresos(where_clause="", parametros=None):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
@@ -92,11 +93,12 @@ class InformeModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
 
     @staticmethod
     def registrar_otro_egreso(descripcion, valor):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -106,12 +108,13 @@ class InformeModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
 
 
     @staticmethod
     def listar_otros_egresos():
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
@@ -131,6 +134,5 @@ class InformeModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
-
-        
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
