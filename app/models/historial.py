@@ -15,7 +15,7 @@ class HistorialModel:
         connection = connection_pool.getconn()
         cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             # Query simplificada usando el total_venta directamente de la tabla ventas
             query_ventas = f"""
                 SELECT 
@@ -51,16 +51,21 @@ class HistorialModel:
             totales = cursor.fetchone()
 
             # Formatear resultados
-            for resultado in resultados:
-                resultado['total_venta'] = HistorialModel.formato_peso_colombiano(resultado['total_venta'])
-                resultado['saldo'] = HistorialModel.formato_peso_colombiano(resultado['saldo'])
-                # Mantener el formato de fecha y hora
-                if resultado['fecha_venta']:
-                    fecha = resultado['fecha_venta']
-                    resultado['fecha_venta'] = fecha.strftime('%Y-%m-%d %H:%M')
+            formatted_results = []
+            for row in resultados:
+                formatted = {
+                    'id_venta': row[0],
+                    'fecha_venta': row[1].strftime('%Y-%m-%d %H:%M') if row[1] else None,
+                    'total_venta': HistorialModel.formato_peso_colombiano(row[2]),
+                    'estado': row[3],
+                    'saldo': HistorialModel.formato_peso_colombiano(row[4]),
+                    'cliente': row[5],
+                    'usuario': row[6]
+                }
+                formatted_results.append(formatted)
             
-            total_ventas = totales.get('total_ventas', 0) or 0
-            total_saldos = totales.get('total_saldos', 0) or 0
+            total_ventas = totales[0] if totales else 0
+            total_saldos = totales[1] if totales else 0
             total_neto = total_ventas - total_saldos
             
             totales_formateados = {
@@ -69,7 +74,7 @@ class HistorialModel:
                 'total_neto': HistorialModel.formato_peso_colombiano(total_neto)
             }
             
-            return resultados, totales_formateados
+            return formatted_results, totales_formateados
         finally:
             if cursor:
                 cursor.close()
@@ -82,7 +87,7 @@ class HistorialModel:
         connection = connection_pool.getconn()
         cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             
             # Construir la consulta base con JOIN para obtener el nombre del vendedor
             query = """
@@ -109,30 +114,44 @@ class HistorialModel:
             else:
                 cursor.execute(query, (cliente_id,))
             
-            ventas = cursor.fetchall()
+            ventas_rows = cursor.fetchall()
             
-            # Obtener detalles de cada venta
-            for venta in ventas:
-                details_query = """
+            formatted_ventas = []
+            for row in ventas_rows:
+                venta = {
+                    'id_venta': row[0],
+                    'fecha_venta': row[1].strftime('%Y-%m-%d %H:%M') if row[1] else None,
+                    'total_venta': row[2],
+                    'estado': row[3],
+                    'saldo': row[4],
+                    'usuario': row[5]
+                }
+                
+                # Obtener detalles de la venta
+                cursor.execute("""
                     SELECT p.nombre AS producto, dv.cantidad, 
                         p.precio, (dv.cantidad * p.precio) AS subtotal
                     FROM detalle_ventas dv
                     JOIN productos p ON dv.id_productos = p.id
                     WHERE dv.id_ventas = %s
-                """
-                cursor.execute(details_query, (venta['id_venta'],))
-                detalles = cursor.fetchall()
+                """, (row[0],))
                 
-                # Formatear valores monetarios en detalles
-                for detalle in detalles:
-                    detalle['precio'] = HistorialModel.formato_peso_colombiano(detalle['precio'])
-                    detalle['subtotal'] = HistorialModel.formato_peso_colombiano(detalle['subtotal'])
+                detalles_rows = cursor.fetchall()
+                detalles = []
+                for detalle_row in detalles_rows:
+                    detalles.append({
+                        'producto': detalle_row[0],
+                        'cantidad': detalle_row[1],
+                        'precio': HistorialModel.formato_peso_colombiano(detalle_row[2]),
+                        'subtotal': HistorialModel.formato_peso_colombiano(detalle_row[3])
+                    })
                 
                 venta['detalles'] = detalles
                 venta['total_venta'] = HistorialModel.formato_peso_colombiano(venta['total_venta'])
                 venta['saldo'] = HistorialModel.formato_peso_colombiano(venta['saldo'])
+                formatted_ventas.append(venta)
             
-            return ventas
+            return formatted_ventas
         finally:
             if cursor:
                 cursor.close()

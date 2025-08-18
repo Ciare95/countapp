@@ -1,4 +1,8 @@
 from app import create_app  # Importa la función create_app desde app/__init__.py
+from app.db import initialize_schema
+
+# Initialize database schema before creating app
+initialize_schema()
 
 # Crea la instancia de la aplicación Flask
 app = create_app()

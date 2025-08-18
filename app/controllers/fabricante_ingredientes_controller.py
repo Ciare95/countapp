@@ -221,12 +221,12 @@ def editar():
 @fabricante_ingredientes_bp.route('/factura_ingredientes', methods=['GET'])
 def factura_ingredientes():
     connection = db.get_connection()
-    with connection.cursor(dictionary=True) as cursor:
+    with connection.cursor() as cursor:
         cursor.execute("SELECT id, nombre FROM proveedores")
-        proveedores = cursor.fetchall()
+        proveedores = [{'id': row[0], 'nombre': row[1]} for row in cursor.fetchall()]
         
         cursor.execute("SELECT id, nombre FROM ingredientes")
-        ingredientes = cursor.fetchall()
+        ingredientes = [{'id': row[0], 'nombre': row[1]} for row in cursor.fetchall()]
     connection.close()
     
     return render_template('fabricante/factura_ingredientes.html', 
@@ -389,7 +389,7 @@ def editar_factura(factura_id):
     try:
         # Obtener la factura
         connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             # Obtener datos de la factura
             cursor.execute("""
                 SELECT ff.id, ff.fecha, ff.numero_factura, p.nombre as nombre_proveedor
@@ -398,7 +398,13 @@ def editar_factura(factura_id):
                 ON ff.id_proveedor = p.id
                 WHERE ff.id = %s
             """, (factura_id,))
-            factura = cursor.fetchone()
+            row = cursor.fetchone()
+            factura = {
+                'id': row[0],
+                'fecha': row[1],
+                'numero_factura': row[2],
+                'nombre_proveedor': row[3]
+            } if row else None
             
             if not factura:
                 flash('Factura no encontrada', 'error')

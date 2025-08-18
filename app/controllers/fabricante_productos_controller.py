@@ -184,40 +184,42 @@ def ver_producto_fabricado(producto_id):
 def listar_productos():
     try:
         conexion = db.get_connection()
-        cursor = conexion.cursor(dictionary=True)
+        cursor = conexion.cursor()
         
         termino_busqueda = request.args.get('q', '').strip()
         
         if termino_busqueda:
             query = """
-                SELECT * FROM productos_fabricados
+                SELECT id, nombre, unidad_medida, costo_total, precio_venta, cantidad_producida 
+                FROM productos_fabricados
                 WHERE nombre LIKE %s
                 ORDER BY nombre ASC
             """
             cursor.execute(query, ('%' + termino_busqueda + '%',))
         else:
             query = """
-                SELECT * FROM productos_fabricados
+                SELECT id, nombre, unidad_medida, costo_total, precio_venta, cantidad_producida 
+                FROM productos_fabricados
                 ORDER BY nombre ASC
             """
             cursor.execute(query)
         
         productos_raw = cursor.fetchall()
         
-        # Convert dictionary results to ProductoFabricado objects
+        # Convert tuple results to ProductoFabricado objects
         productos = []
-        for r in productos_raw:
+        for row in productos_raw:
             # Calcular ganancia neta y porcentaje de rentabilidad
-            ganancia_neta = (r['precio_venta'] - r['costo_total']) if r['costo_total'] is not None else 0
-            porcentaje_rentabilidad = (ganancia_neta * 100 / r['precio_venta']) if r['precio_venta'] > 0 else 0
+            ganancia_neta = (row[4] - row[3]) if row[3] is not None else 0
+            porcentaje_rentabilidad = (ganancia_neta * 100 / row[4]) if row[4] > 0 else 0
             
             producto = ProductoFabricado(
-                id=r['id'],
-                nombre=r['nombre'],
-                unidad_medida=r['unidad_medida'],
-                costo_total=r['costo_total'],
-                precio_venta=r['precio_venta'],
-                cantidad_producida=r['cantidad_producida'],
+                id=row[0],
+                nombre=row[1],
+                unidad_medida=row[2],
+                costo_total=row[3],
+                precio_venta=row[4],
+                cantidad_producida=row[5],
                 ganancia_neta=ganancia_neta,
                 porcentaje_rentabilidad=porcentaje_rentabilidad
             )
@@ -228,5 +230,3 @@ def listar_productos():
     finally:
         cursor.close()
         conexion.close()
-
-
