@@ -98,3 +98,5 @@ def create_app():
         return render_template("index.html", categorias=categorias)
 
     return app
+
+app = create_app()
