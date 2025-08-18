@@ -42,7 +42,8 @@ def create_app():
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
     
     @app.before_request
@@ -94,7 +95,7 @@ def create_app():
             if 'cursor' in locals():
                 cursor.close()
             if 'connection' in locals():
-                connection.close()
+                connection_pool.putconn(connection)
         return render_template("index.html", categorias=categorias)
 
     return app

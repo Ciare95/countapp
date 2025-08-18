@@ -45,7 +45,8 @@ class Usuario(UserMixin):
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
         
     def obtener_por_id(self, id):
@@ -69,7 +70,8 @@ class Usuario(UserMixin):
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
     
     def obtener_usuarios(self):
@@ -98,7 +100,8 @@ class Usuario(UserMixin):
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
         return usuarios
 
@@ -120,7 +123,8 @@ class Usuario(UserMixin):
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
 
             
     
@@ -139,7 +143,8 @@ class Usuario(UserMixin):
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
             
             
     def eliminar_usuario(self):
@@ -158,4 +163,5 @@ class Usuario(UserMixin):
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if 'conexion' in locals():
+                connection_pool.putconn(conexion)
