@@ -64,14 +64,13 @@ def create_pool():
 
         logger.debug("Intentando crear pool de conexiones (Postgres)...")
 
+        # Create connection string with proper encoding
+        conn_string = f"host={dbconfig['host']} user={dbconfig['user']} password={dbconfig['password']} dbname={dbconfig['database']} port={dbconfig['port']} client_encoding=utf8"
+        
         connection_pool = pool.SimpleConnectionPool(
             1,                    # minconn
             15,                   # maxconn
-            host=dbconfig['host'],
-            user=dbconfig['user'],
-            password=dbconfig['password'],
-            database=dbconfig['database'],
-            port=dbconfig['port']
+            conn_string
         )
 
         logger.info("Pool de conexiones creado exitosamente")
