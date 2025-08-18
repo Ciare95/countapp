@@ -1,7 +1,10 @@
 from app.db import connection_pool as mysql
 import locale
 
-locale.setlocale(locale.LC_ALL, 'es_CO.UTF-8')
+try:
+    locale.setlocale(locale.LC_ALL, 'es_CO.UTF-8')
+except locale.Error:
+    print("Warning: 'es_CO.UTF-8' locale not supported. Using default locale.")
 
 class FacturaModel:
     
@@ -158,8 +161,3 @@ class FacturaModel:
                 cursor.close()
             if conection:
                 conection.close()
-
-
-
-
-
