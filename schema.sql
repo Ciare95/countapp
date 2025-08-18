@@ -1,0 +1,12 @@
+CREATE TABLE rol (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE usuarios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) UNIQUE NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
+    id_rol INTEGER NOT NULL,
+    FOREIGN KEY (id_rol) REFERENCES rol(id)
+);
