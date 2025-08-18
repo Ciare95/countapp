@@ -150,7 +150,7 @@ def create_default_user(pool):
         raise
 
 def initialize_schema():
-    """Checks if the schema is initialized and creates it if not."""
+    """Checks and initializes the database schema, including partial updates."""
     conn = None
     try:
         logger.debug("Verifying database schema...")
@@ -164,18 +164,23 @@ def initialize_schema():
         )
         cursor = conn.cursor()
 
-        # Check if 'rol' table exists
-        cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'rol');")
-        table_exists = cursor.fetchone()[0]
+        # Check for each required table
+        required_tables = ['rol', 'usuarios', 'clientes', 'ventas', 'categorias', 'productos', 'detalle_ventas']
+        missing_tables = []
+        
+        for table in required_tables:
+            cursor.execute(f"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{table}');")
+            if not cursor.fetchone()[0]:
+                missing_tables.append(table)
 
-        if not table_exists:
-            logger.info("Schema not found. Initializing database...")
+        if missing_tables:
+            logger.info(f"Missing tables detected: {missing_tables}. Initializing/updating schema...")
             with open('schema.sql', 'r') as f:
                 cursor.execute(f.read())
             conn.commit()
-            logger.info("Database initialized successfully.")
+            logger.info("Database schema updated successfully.")
         else:
-            logger.debug("Database schema already initialized.")
+            logger.debug("All required tables exist.")
 
     except Exception as e:
         logger.error("Error initializing schema:")

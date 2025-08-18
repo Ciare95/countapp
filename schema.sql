@@ -30,10 +30,24 @@ CREATE TABLE ventas (
     FOREIGN KEY (id_usuarios) REFERENCES usuarios(id)
 );
 
+CREATE TABLE categorias (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE productos (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    id_categoria INTEGER,
+    FOREIGN KEY (id_categoria) REFERENCES categorias(id)
+);
+
 CREATE TABLE detalle_ventas (
     id SERIAL PRIMARY KEY,
     id_ventas INTEGER NOT NULL,
     id_productos INTEGER NOT NULL,
     cantidad INTEGER NOT NULL,
-    FOREIGN KEY (id_ventas) REFERENCES ventas(id)
+    FOREIGN KEY (id_ventas) REFERENCES ventas(id),
+    FOREIGN KEY (id_productos) REFERENCES productos(id)
 );
