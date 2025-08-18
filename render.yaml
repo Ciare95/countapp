@@ -7,4 +7,7 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.0
+      - key: DATABASE_URL
+        value: postgresql://countapp_db_user:lxkhg2cmdFd6UlxquaBzij7SGdtZPhlR@dpg-d2hmja7diees738ddhf0-a.virginia-postgres.render.com/countapp_db
+>>>>>>> 
 >>>>>>>

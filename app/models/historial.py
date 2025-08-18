@@ -42,12 +42,12 @@ class HistorialModel:
                 {where_clause}
             """
             
-            print("Query completa ventas:", query_ventas % (parametros or {}))
-            cursor.execute(query_ventas, parametros or {})
+            print("Query completa ventas:", query_ventas % (parametros or ()))
+            cursor.execute(query_ventas, parametros or ())
             resultados = cursor.fetchall()
             
-            print("Query completa totales:", query_totales % (parametros or {}))
-            cursor.execute(query_totales, parametros or {})
+            print("Query completa totales:", query_totales % (parametros or ()))
+            cursor.execute(query_totales, parametros or ())
             totales = cursor.fetchone()
 
             # Formatear resultados

@@ -19,25 +19,24 @@ def historial_general():
 
         # Construcción de la cláusula WHERE y parámetros
         condiciones = []
-        parametros = {}
+        parametros = []
 
         if filtro_fecha:
-            condiciones.append("DATE(v.fecha_venta) = %(fecha)s")
-            parametros['fecha'] = filtro_fecha
+            condiciones.append("DATE(v.fecha_venta) = %s")
+            parametros.append(filtro_fecha)
         elif filtro_mes:
             mes = int(filtro_mes.split("-")[1])
             anio = int(filtro_mes.split("-")[0])
-            condiciones.append("MONTH(v.fecha_venta) = %(mes)s AND YEAR(v.fecha_venta) = %(anio_mes)s")
-            parametros['mes'] = mes
-            parametros['anio_mes'] = anio
+            condiciones.append("MONTH(v.fecha_venta) = %s AND YEAR(v.fecha_venta) = %s")
+            parametros.extend([mes, anio])
         elif filtro_anio:
-            condiciones.append("YEAR(v.fecha_venta) = %(anio)s")
-            parametros['anio'] = int(filtro_anio)
+            condiciones.append("YEAR(v.fecha_venta) = %s")
+            parametros.append(int(filtro_anio))
 
         where_clause = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
         
         # Obtener las ventas filtradas y totales
-        ventas, totales = HistorialModel.obtener_ventas_generales(where_clause, parametros)
+        ventas, totales = HistorialModel.obtener_ventas_generales(where_clause, tuple(parametros))
         
         return render_template('ventas/historial_general.html',
                     ventas=ventas,
