@@ -1,41 +1,29 @@
-import mysql.connector
-from mysql.connector import pooling
+import psycopg2
+from psycopg2 import pool
 import sys
 import logging
 import traceback
 import os
 
-# Configuración de logging (mantén la misma que tienes)
+# Configuración de logging
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Forzar el uso del driver puro Python
-mysql.connector.HAVE_CEXT = False
-
-logger.debug(f"Current working directory: {os.getcwd()}")
-logger.debug(f"Python path: {sys.path}")
-logger.debug(f"MySQL Connector version: {mysql.connector.__version__}")
-logger.debug(f"Using pure Python implementation: {not mysql.connector.HAVE_CEXT}")
-
 dbconfig = {
-    "host": "localhost",
-    "user": "root",
-    "password": "",
-    "database": "sistema_papeleria",
-    "port": 3306,
-    "connection_timeout": 30,
-    "raise_on_warnings": True,
-    "use_pure": True  # Forzar el uso de la implementación pura Python
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "user": os.environ.get("DB_USER", "postgres"),
+    "password": os.environ.get("DB_PASSWORD", ""),
+    "database": os.environ.get("DB_DATABASE", "sistema_papeleria"),
+    "port": int(os.environ.get("DB_PORT", 5432)),
 }
 
 def test_basic_connection():
     try:
-        # Intentar crear una conexión básica primero
-        logger.debug("Intentando conexión básica sin pool...")
-        conn = mysql.connector.connect(
+        logger.debug("Intentando conexión básica sin pool (Postgres)...")
+        conn = psycopg2.connect(
             host=dbconfig['host'],
             user=dbconfig['user'],
             password=dbconfig['password'],
@@ -43,102 +31,82 @@ def test_basic_connection():
             port=dbconfig['port']
         )
         cursor = conn.cursor()
-        cursor.execute("SELECT VERSION()")
+        cursor.execute("SELECT version()")
         version = cursor.fetchone()
-        logger.debug(f"Versión del servidor MySQL: {version}")
+        logger.debug(f"Versión del servidor Postgres: {version}")
         cursor.close()
         conn.close()
         return True
-    except Exception as e:
+    except Exception:
         logger.error("Error en conexión básica:")
         logger.error(traceback.format_exc())
         return False
 
 def create_pool():
     try:
-        # Probar conexión básica primero
         if not test_basic_connection():
             raise Exception("La conexión básica falló, no se intentará crear el pool")
 
-        logger.debug("Intentando crear pool de conexiones...")
-        
-        # Crear el pool con configuración mínima primero
-        pool = mysql.connector.pooling.MySQLConnectionPool(
-            pool_name="mypool",
-            pool_size=15,
+        logger.debug("Intentando crear pool de conexiones (Postgres)...")
+
+        connection_pool = pool.SimpleConnectionPool(
+            1,                    # minconn
+            15,                   # maxconn
             host=dbconfig['host'],
             user=dbconfig['user'],
             password=dbconfig['password'],
-            database=dbconfig['database']
+            database=dbconfig['database'],
+            port=dbconfig['port']
         )
-        
+
         logger.info("Pool de conexiones creado exitosamente")
-        
+
         # Probar obtener una conexión del pool
-        try:
-            test_conn = pool.get_connection()
-            test_conn.close()
-            logger.debug("Prueba de conexión del pool exitosa")
-        except Exception as pool_test_error:
-            logger.error(f"Error al probar conexión del pool: {pool_test_error}")
-            raise
-            
-        return pool
-        
-    except mysql.connector.Error as err:
-        logger.error("Error específico de MySQL:")
-        logger.error(f"Error code: {err.errno if hasattr(err, 'errno') else 'N/A'}")
-        logger.error(f"SQLSTATE: {err.sqlstate if hasattr(err, 'sqlstate') else 'N/A'}")
-        logger.error(f"Error message: {str(err)}")
-        raise
+        test_conn = connection_pool.getconn()
+        connection_pool.putconn(test_conn)
+        logger.debug("Prueba de conexión del pool exitosa")
+
+        return connection_pool
+
     except Exception as e:
-        logger.error("Error general:")
-        logger.error(f"Tipo de error: {type(e).__name__}")
-        logger.error(f"Mensaje: {str(e)}")
-        logger.error(f"Traceback completo:\n{traceback.format_exc()}")
+        logger.error("Error al crear pool:")
+        logger.error(traceback.format_exc())
         raise
 
 def ensure_roles_exist(pool):
-    """Crea los roles 'administrador' y 'usuario' si no existen en la tabla 'rol'."""
+    """Crea los roles 'administrador' y 'usuario' en tabla rol si no existen."""
     try:
-        conn = pool.get_connection()
+        conn = pool.getconn()
         cursor = conn.cursor()
-        
-        # Verificar si los roles existen
+
         cursor.execute("SELECT COUNT(*) FROM rol WHERE nombre = 'administrador'")
         admin_exists = cursor.fetchone()[0] > 0
-        
+
         cursor.execute("SELECT COUNT(*) FROM rol WHERE nombre = 'usuario'")
         user_exists = cursor.fetchone()[0] > 0
-        
-        # Insertar los roles si no existen
+
         if not admin_exists:
             cursor.execute("INSERT INTO rol (nombre) VALUES ('administrador')")
             logger.info("Rol 'administrador' creado exitosamente.")
-        else:
-            logger.debug("Rol 'administrador' ya existe.")
-        
         if not user_exists:
             cursor.execute("INSERT INTO rol (nombre) VALUES ('usuario')")
             logger.info("Rol 'usuario' creado exitosamente.")
-        else:
-            logger.debug("Rol 'usuario' ya existe.")
-        
+
         conn.commit()
         cursor.close()
-        conn.close()
-    except Exception as e:
+        pool.putconn(conn)
+
+    except Exception:
         logger.error("Error al asegurar la existencia de los roles:")
         logger.error(traceback.format_exc())
         raise
 
 # Crear el pool de conexiones
 try:
-    logger.debug("=== Iniciando proceso de conexión ===")
+    logger.debug("=== Iniciando proceso de conexión (Postgres) ===")
     connection_pool = create_pool()
     ensure_roles_exist(connection_pool)
 except Exception as e:
     logger.critical(f"Error crítico al inicializar el pool: {str(e)}")
-    logger.critical("Detalles completos del error:")
     logger.critical(traceback.format_exc())
     sys.exit(1)
