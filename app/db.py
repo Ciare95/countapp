@@ -115,6 +115,40 @@ def ensure_roles_exist(pool):
         logger.error(traceback.format_exc())
         raise
 
+def create_default_user(pool):
+    """Creates a default admin user if no users exist."""
+    try:
+        conn = pool.getconn()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM usuarios")
+        user_count = cursor.fetchone()[0]
+
+        if user_count == 0:
+            logger.info("No users found. Creating default admin user...")
+            # Ensure the 'administrador' role exists and get its ID
+            cursor.execute("SELECT id FROM rol WHERE nombre = 'administrador'")
+            admin_role_id = cursor.fetchone()
+            if admin_role_id:
+                admin_role_id = admin_role_id[0]
+                # Create the default admin user
+                cursor.execute(
+                    "INSERT INTO usuarios (nombre, contrasena, id_rol) VALUES (%s, %s, %s)",
+                    ('admin', 'admin', admin_role_id)
+                )
+                conn.commit()
+                logger.info("Default admin user created successfully (admin/admin).")
+            else:
+                logger.error("Could not find 'administrador' role to create default user.")
+
+        cursor.close()
+        pool.putconn(conn)
+
+    except Exception:
+        logger.error("Error creating default user:")
+        logger.error(traceback.format_exc())
+        raise
+
 def initialize_schema():
     """Checks if the schema is initialized and creates it if not."""
     conn = None
@@ -156,6 +190,7 @@ try:
     initialize_schema()
     connection_pool = create_pool()
     ensure_roles_exist(connection_pool)
+    create_default_user(connection_pool)
 except Exception as e:
     logger.critical(f"Error crítico al inicializar el pool: {str(e)}")
     logger.critical(traceback.format_exc())
