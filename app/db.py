@@ -4,6 +4,7 @@ import sys
 import logging
 import traceback
 import os
+from urllib.parse import urlparse
 
 # Configuración de logging
 logging.basicConfig(
@@ -12,13 +13,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-dbconfig = {
-    "host": os.environ.get("DB_HOST", "localhost"),
-    "user": os.environ.get("DB_USER", "postgres"),
-    "password": os.environ.get("DB_PASSWORD", ""),
-    "database": os.environ.get("DB_DATABASE", "sistema_papeleria"),
-    "port": int(os.environ.get("DB_PORT", 5432)),
-}
+# Check for DATABASE_URL from Render/Heroku environment
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    result = urlparse(database_url)
+    dbconfig = {
+        "user": result.username,
+        "password": result.password,
+        "host": result.hostname,
+        "database": result.path[1:],
+        "port": result.port,
+    }
+else:
+    # Fallback to individual env vars for local development
+    dbconfig = {
+        "host": os.environ.get("DB_HOST", "localhost"),
+        "user": os.environ.get("DB_USER", "postgres"),
+        "password": os.environ.get("DB_PASSWORD", ""),
+        "database": os.environ.get("DB_DATABASE", "sistema_papeleria"),
+        "port": int(os.environ.get("DB_PORT", 5432)),
+    }
 
 def test_basic_connection():
     try:

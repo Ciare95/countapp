@@ -26,7 +26,7 @@ class Usuario(UserMixin):
 
     @staticmethod
     def obtener_por_nombre(nombre):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -49,7 +49,7 @@ class Usuario(UserMixin):
 
         
     def obtener_por_id(self, id):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -73,7 +73,7 @@ class Usuario(UserMixin):
             
     
     def obtener_usuarios(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         usuarios = []
         
@@ -105,7 +105,7 @@ class Usuario(UserMixin):
     
             
     def crear_usuario(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -125,7 +125,7 @@ class Usuario(UserMixin):
             
     
     def actualizar_usuario(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -143,7 +143,7 @@ class Usuario(UserMixin):
             
             
     def eliminar_usuario(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()

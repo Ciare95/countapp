@@ -24,7 +24,7 @@ def create_app():
     
     @login_manager.user_loader
     def load_user(user_id):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -83,7 +83,7 @@ def create_app():
         if not current_user.is_authenticated:
             return redirect(url_for('usuario.login'))
         try:
-            connection = connection_pool.get_connection()
+            connection = connection_pool.getconn()
             cursor = connection.cursor(dictionary=True)
             cursor.execute("SELECT id, nombre FROM categorias")
             categorias = cursor.fetchall()
