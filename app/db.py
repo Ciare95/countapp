@@ -174,11 +174,26 @@ def initialize_schema():
                 missing_tables.append(table)
 
         if missing_tables:
-            logger.info(f"Missing tables detected: {missing_tables}. Initializing/updating schema...")
+            logger.info(f"Missing tables detected: {missing_tables}. Creating missing tables...")
             with open('schema.sql', 'r') as f:
-                cursor.execute(f.read())
+                schema_sql = f.read()
+            
+            # Split into individual statements and execute only for missing tables
+            statements = [s.strip() for s in schema_sql.split(';') if s.strip()]
+            for stmt in statements:
+                try:
+                    # Only execute statements for missing tables
+                    if any(table in stmt.lower() for table in missing_tables):
+                        cursor.execute(stmt)
+                except psycopg2.errors.DuplicateTable:
+                    logger.debug(f"Table already exists, skipping: {stmt.split()[2]}")
+                    conn.rollback()
+                except Exception as e:
+                    logger.error(f"Error executing schema statement: {e}")
+                    raise
+            
             conn.commit()
-            logger.info("Database schema updated successfully.")
+            logger.info(f"Successfully created {len(missing_tables)} missing tables")
         else:
             logger.debug("All required tables exist.")
 
