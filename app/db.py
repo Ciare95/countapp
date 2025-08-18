@@ -38,11 +38,12 @@ def test_basic_connection():
     try:
         logger.debug("Intentando conexión básica sin pool (Postgres)...")
         conn = psycopg2.connect(
-            host=dbconfig['host'],
-            user=dbconfig['user'],
-            password=dbconfig['password'],
-            database=dbconfig['database'],
-            port=dbconfig['port']
+            f"host={dbconfig['host']} "
+            f"user={dbconfig['user']} "
+            f"password={dbconfig['password']} "
+            f"dbname={dbconfig['database']} "
+            f"port={dbconfig['port']} "
+            "client_encoding=utf8"
         )
         cursor = conn.cursor()
         cursor.execute("SELECT version()")
@@ -155,11 +156,12 @@ def initialize_schema():
     try:
         logger.debug("Verifying database schema...")
         conn = psycopg2.connect(
-            host=dbconfig['host'],
-            user=dbconfig['user'],
-            password=dbconfig['password'],
-            database=dbconfig['database'],
-            port=dbconfig['port']
+            f"host={dbconfig['host']} "
+            f"user={dbconfig['user']} "
+            f"password={dbconfig['password']} "
+            f"dbname={dbconfig['database']} "
+            f"port={dbconfig['port']} "
+            "client_encoding=utf8"
         )
         cursor = conn.cursor()
 

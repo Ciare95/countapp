@@ -7,7 +7,7 @@ class Categoria:
         self.nombre = nombre
         
     def obtener_categorias(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         categorias = []
         
@@ -24,12 +24,13 @@ class Categoria:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if conexion:
+                connection_pool.putconn(conexion)
             
         return categorias
 
     def obtener_por_id(self, id):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -47,10 +48,11 @@ class Categoria:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()  
+            if conexion:
+                connection_pool.putconn(conexion)
         
     def crear_categoria(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -66,11 +68,12 @@ class Categoria:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if conexion:
+                connection_pool.putconn(conexion)
 
     
     def editar_categoria(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -84,10 +87,11 @@ class Categoria:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
+            if conexion:
+                connection_pool.putconn(conexion)
             
     def eliminar_categoria(self):
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = None
         try:
             cursor = conexion.cursor()
@@ -101,5 +105,5 @@ class Categoria:
         finally:
             if cursor:
                 cursor.close()
-            conexion.close()
-        
+            if conexion:
+                connection_pool.putconn(conexion)

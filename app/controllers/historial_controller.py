@@ -59,17 +59,22 @@ def historial_cliente(cliente_id):
     try:
         # Obtener el nombre del cliente
         cliente_query = "SELECT nombre FROM clientes WHERE id = %s"
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor(dictionary=True)
+        connection = connection_pool.getconn()
+        cursor = connection.cursor()
         cursor.execute(cliente_query, (cliente_id,))
         cliente = cursor.fetchone()
         cursor.close()
         
         if not cliente:
+            if 'connection' in locals():
+                connection_pool.putconn(connection)
             raise ValueError("Cliente no encontrado")
         
         # Filtrar ventas según el estado
         ventas = HistorialModel.obtener_ventas_por_cliente(cliente_id, estado)
+        
+        if 'connection' in locals():
+            connection_pool.putconn(connection)
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'status': 'success', 'data': ventas})
@@ -83,8 +88,3 @@ def historial_cliente(cliente_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'status': 'error', 'message': error_message}), 500
         return "Error interno", 500
-
-
-
-
-
