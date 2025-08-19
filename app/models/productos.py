@@ -30,11 +30,19 @@ class Producto:
             valores = (self.nombre, self.id_categorias, 
                       None if self.es_servicio else self.cantidad,
                       self.precio, self.precio_compra, self.es_servicio)
+            
+            # Debug: imprimir los valores que se van a insertar
+            print(f"DEBUG - Valores a insertar: {valores}")
+            
             cursor.execute(sql, valores)
             conexion.commit()
+            print("DEBUG - Producto creado exitosamente")
             return True
         except Exception as e:
-            print(f"Error al crear el producto: {e}")
+            print(f"ERROR al crear el producto: {e}")
+            print(f"ERROR - Tipo de excepción: {type(e).__name__}")
+            import traceback
+            traceback.print_exc()
             return False
         finally:
             if cursor:

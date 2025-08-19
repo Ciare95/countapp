@@ -38,9 +38,12 @@ CREATE TABLE categorias (
 CREATE TABLE productos (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
+    id_categorias INTEGER,
+    stock INTEGER,
     precio DECIMAL(10,2) NOT NULL,
-    id_categoria INTEGER,
-    FOREIGN KEY (id_categoria) REFERENCES categorias(id)
+    precio_compra DECIMAL(10,2),
+    es_servicio BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (id_categorias) REFERENCES categorias(id)
 );
 
 CREATE TABLE detalle_ventas (
