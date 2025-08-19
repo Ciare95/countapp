@@ -25,18 +25,33 @@ def listar_productos():
 @administrador_requerido
 def crear_producto():
     if request.method == 'POST':
-        producto = Producto()
-        producto.nombre = request.form['nombre']
-        producto.id_categorias = request.form['categoria']
-        producto.es_servicio = 'es_servicio' in request.form
-        producto.cantidad = None if producto.es_servicio else request.form['stock']
-        producto.precio_compra = request.form['precio_compra']
-        producto.precio = request.form['precio']
-        
-        if producto.crear_producto():
-            flash("Producto/Servicio creado correctamente.", "success")
-        else:
-            flash("Error al crear el producto/servicio. Inténtalo de nuevo.", "danger")
+        try:
+            producto = Producto()
+            producto.nombre = request.form['nombre']
+            producto.id_categorias = request.form['categoria']
+            producto.es_servicio = 'es_servicio' in request.form
+            
+            # Convertir valores numéricos y manejar casos edge
+            if producto.es_servicio:
+                producto.cantidad = None
+            else:
+                stock = request.form['stock'].strip()
+                producto.cantidad = int(stock) if stock and stock.isdigit() else 0
+            
+            precio_compra = request.form['precio_compra'].strip()
+            producto.precio_compra = float(precio_compra) if precio_compra else 0.0
+            
+            precio = request.form['precio'].strip()
+            producto.precio = float(precio) if precio else 0.0
+            
+            if producto.crear_producto():
+                flash("Producto/Servicio creado correctamente.", "success")
+            else:
+                flash("Error al crear el producto/servicio. Inténtalo de nuevo.", "danger")
+        except ValueError as e:
+            flash(f"Error en los datos numéricos: {str(e)}", "danger")
+        except Exception as e:
+            flash(f"Error inesperado: {str(e)}", "danger")
     return redirect(url_for('producto.listar_productos'))
 
 @producto_bp.route("/editar/<int:id>", methods=['GET', 'POST'])
@@ -47,17 +62,32 @@ def editar_producto(id):
     producto.obtener_por_id(id)
     
     if request.method == 'POST':
-        producto.nombre = request.form['nombre']
-        producto.id_categorias = request.form['categoria']
-        producto.es_servicio = 'es_servicio' in request.form
-        producto.cantidad = None if producto.es_servicio else request.form['stock']
-        producto.precio_compra = request.form['precio_compra']
-        producto.precio = request.form['precio']
-        
-        if producto.actualizar_producto():
-            flash("Producto/Servicio actualizado correctamente.", "success")
-        else:
-            flash("Error al actualizar el producto/servicio. Inténtalo de nuevo.", "danger")
+        try:
+            producto.nombre = request.form['nombre']
+            producto.id_categorias = request.form['categoria']
+            producto.es_servicio = 'es_servicio' in request.form
+            
+            # Convertir valores numéricos y manejar casos edge
+            if producto.es_servicio:
+                producto.cantidad = None
+            else:
+                stock = request.form['stock'].strip()
+                producto.cantidad = int(stock) if stock and stock.isdigit() else 0
+            
+            precio_compra = request.form['precio_compra'].strip()
+            producto.precio_compra = float(precio_compra) if precio_compra else 0.0
+            
+            precio = request.form['precio'].strip()
+            producto.precio = float(precio) if precio else 0.0
+            
+            if producto.actualizar_producto():
+                flash("Producto/Servicio actualizado correctamente.", "success")
+            else:
+                flash("Error al actualizar el producto/servicio. Inténtalo de nuevo.", "danger")
+        except ValueError as e:
+            flash(f"Error en los datos numéricos: {str(e)}", "danger")
+        except Exception as e:
+            flash(f"Error inesperado: {str(e)}", "danger")
     return redirect(url_for('producto.listar_productos'))
 
 

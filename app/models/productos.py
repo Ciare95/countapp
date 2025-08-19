@@ -9,7 +9,7 @@ class Producto:
         self.precio = precio
         self.precio_compra = precio_compra
         self.cantidad = cantidad
-        self.ganancia_neta = ganancia_neta,
+        self.ganancia_neta = ganancia_neta
         self.rentabilidad = rentabilidad
         self.es_servicio = es_servicio
 
