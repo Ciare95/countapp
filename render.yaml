@@ -9,7 +9,7 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn run:app
-    preDeployCommand: python reset_database.py
+
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
