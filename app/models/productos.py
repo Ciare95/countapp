@@ -25,7 +25,7 @@ class Producto:
         try:
             cursor = conexion.cursor()
             sql = """INSERT INTO productos 
-                    (nombre, id_categorias, stock, precio, precio_compra, es_servicio) 
+                    (nombre, id_categoria, stock, precio, precio_compra, es_servicio) 
                     VALUES (%s, %s, %s, %s, %s, %s)"""
             valores = (self.nombre, self.id_categorias, 
                       0 if not self.es_servicio and self.cantidad is None else (None if self.es_servicio else self.cantidad),
@@ -58,7 +58,7 @@ class Producto:
         try:
             cursor = conexion.cursor()
             sql = """UPDATE productos 
-                     SET nombre = %s, id_categorias = %s, stock = %s, 
+                     SET nombre = %s, id_categoria = %s, stock = %s, 
                          precio = %s, precio_compra = %s, es_servicio = %s 
                      WHERE id = %s"""
             cursor.execute(sql, (
@@ -87,7 +87,7 @@ class Producto:
         cursor = None
         try:
             cursor = conexion.cursor()
-            sql = "SELECT id, nombre, id_categorias, stock, precio, precio_compra FROM productos WHERE id = %s"
+            sql = "SELECT id, nombre, id_categoria, stock, precio, precio_compra FROM productos WHERE id = %s"
             cursor.execute(sql, (id,))
             resultado = cursor.fetchone()
             if resultado:
@@ -252,7 +252,7 @@ class Producto:
                 FROM 
                     productos p
                 WHERE 
-                    p.id_categorias = %s
+                    p.id_categoria = %s
             """
             cursor.execute(sql, (categoria_id,))
             resultados = cursor.fetchall()
