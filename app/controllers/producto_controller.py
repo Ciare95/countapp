@@ -26,9 +26,15 @@ def listar_productos():
 def crear_producto():
     if request.method == 'POST':
         try:
+            # Log de datos recibidos
+            print("DEBUG - Datos recibidos en crear_producto:")
+            for key, value in request.form.items():
+                print(f"  {key}: {value}")
+            print(f"  es_servicio: {'es_servicio' in request.form}")
+            
             producto = Producto()
             producto.nombre = request.form['nombre']
-            producto.id_categorias = request.form['categoria']
+            producto.id_categorias = int(request.form['categoria']) if request.form['categoria'].isdigit() else None
             producto.es_servicio = 'es_servicio' in request.form
             
             # Convertir valores numéricos y manejar casos edge
