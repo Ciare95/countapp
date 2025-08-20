@@ -121,19 +121,29 @@ def eliminar_producto(id):
 @producto_bp.route('/buscar/<termino>', methods=['GET'])
 def buscar_producto(termino):
     try:
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor(dictionary=True)
+        connection = connection_pool.getconn()
+        cursor = connection.cursor()
 
         query = """
-            SELECT id, nombre, precio FROM productos
-            WHERE nombre LIKE %s OR id LIKE %s
+            SELECT id, nombre, precio, precio_compra FROM productos
+            WHERE nombre LIKE %s OR CAST(id AS TEXT) LIKE %s
         """
         cursor.execute(query, (f"%{termino}%", f"%{termino}%"))
         productos = cursor.fetchall()
         cursor.close()
-        connection.close()
+        connection_pool.putconn(connection)
 
-        return jsonify(productos)
+        # Convertir resultados a lista de diccionarios
+        productos_list = []
+        for row in productos:
+            productos_list.append({
+                'id': row[0],
+                'nombre': row[1],
+                'precio': float(row[2]) if row[2] is not None else 0,
+                'precio_compra': float(row[3]) if row[3] is not None else 0
+            })
+
+        return jsonify(productos_list)
     except Exception as e:
         flash(f"Error al buscar el producto: {str(e)}", "danger")
         return jsonify({"error": str(e)}), 500

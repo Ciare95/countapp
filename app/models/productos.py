@@ -208,13 +208,14 @@ class Producto:
                     id, 
                     nombre, 
                     stock, 
-                    precio 
+                    precio,
+                    precio_compra
                 FROM 
                     productos 
                 WHERE 
-                    nombre LIKE %s OR id = %s
+                    nombre LIKE %s OR CAST(id AS TEXT) LIKE %s
             """
-            cursor.execute(sql, (f"%{query}%", query))
+            cursor.execute(sql, (f"%{query}%", f"%{query}%"))
             resultados = cursor.fetchall()
             
             productos = []
