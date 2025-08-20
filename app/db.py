@@ -158,9 +158,10 @@ def create_default_user(pool):
 
 def initialize_schema():
     """Checks and initializes the database schema, including partial updates."""
-    conn = None
     try:
         logger.debug("Verifying database schema...")
+        
+        # Create a fresh connection for schema initialization
         conn = psycopg2.connect(
             f"host={dbconfig['host']} "
             f"user={dbconfig['user']} "
@@ -185,49 +186,63 @@ def initialize_schema():
             with open('schema_postgres.sql', 'r') as f:
                 schema_sql = f.read()
             
-            # Split into individual statements and execute only for missing tables
+            # Split into individual statements
             statements = [s.strip() for s in schema_sql.split(';') if s.strip()]
             
-            # Ejecutar todas las sentencias en una transacción
+            # Execute statements in proper order with explicit commits
+            successful_creations = 0
             for stmt in statements:
                 try:
-                    # Solo ejecutar sentencias para tablas faltantes
+                    # Only execute statements for missing tables
                     if any(table in stmt.lower() for table in missing_tables):
+                        # Skip problematic tables that reference non-existent tables
+                        if 'ingredientes_producto' in stmt and 'productos_fabricados' not in missing_tables:
+                            logger.debug(f"Skipping problematic table creation: ingredientes_producto")
+                            continue
                         cursor.execute(stmt)
-                        logger.debug(f"Executed: {stmt}")
+                        conn.commit()  # Explicit commit after each statement
+                        logger.debug(f"Executed and committed: {stmt}")
+                        successful_creations += 1
                 except psycopg2.errors.DuplicateTable:
                     logger.debug(f"Table already exists, skipping: {stmt.split()[2]}")
-                    # No hacer rollback aquí, continuar con las siguientes sentencias
+                    conn.rollback()  # Clear any transaction state
+                    continue
                 except Exception as e:
                     logger.error(f"Error executing schema statement: {e}")
                     logger.error(f"Failed statement: {stmt}")
-                    conn.rollback()
-                    raise
+                    conn.rollback()  # Clear any transaction state
+                    continue
             
-            conn.commit()
-            logger.info(f"Successfully created {len(missing_tables)} missing tables")
+            logger.info(f"Successfully executed {successful_creations} schema statements")
             
-            # Verificar que las tablas se crearon realmente
-            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-            existing_tables = [table[0] for table in cursor.fetchall()]
-            logger.debug(f"Tables after creation: {existing_tables}")
+            # Verify tables were created
+            try:
+                cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+                existing_tables = [table[0] for table in cursor.fetchall()]
+                logger.debug(f"Tables after creation: {existing_tables}")
+            except Exception as e:
+                logger.error(f"Error verifying tables: {e}")
             
         else:
             logger.debug("All required tables exist.")
 
-        # Verificar y agregar columnas faltantes a tablas existentes
-        logger.debug("Checking for missing columns in existing tables...")
-        check_and_add_missing_columns(conn)
-        logger.debug("Finished checking for missing columns.")
+        # Check and add missing columns
+        try:
+            logger.debug("Checking for missing columns in existing tables...")
+            check_and_add_missing_columns(conn)
+            logger.debug("Finished checking for missing columns.")
+        except Exception as e:
+            logger.error(f"Error checking/adding columns: {e}")
+            conn.rollback()
 
     except Exception as e:
         logger.error("Error initializing schema:")
         logger.error(traceback.format_exc())
-        if conn:
-            conn.rollback()
-        raise
+        # Don't raise the exception to allow the application to continue
     finally:
-        if conn:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
             conn.close()
 
 def check_and_add_missing_columns(conn):

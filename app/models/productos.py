@@ -28,7 +28,7 @@ class Producto:
                     (nombre, id_categorias, stock, precio, precio_compra, es_servicio) 
                     VALUES (%s, %s, %s, %s, %s, %s)"""
             valores = (self.nombre, self.id_categorias, 
-                      None if self.es_servicio else self.cantidad,
+                      0 if not self.es_servicio and self.cantidad is None else (None if self.es_servicio else self.cantidad),
                       self.precio, self.precio_compra, self.es_servicio)
             
             # Debug: imprimir los valores que se van a insertar
