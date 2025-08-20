@@ -175,35 +175,91 @@ def initialize_schema():
 
         if missing_tables:
             logger.info(f"Missing tables detected: {missing_tables}. Creating missing tables...")
-            with open('schema.sql', 'r') as f:
+            with open('schema_postgres.sql', 'r') as f:
                 schema_sql = f.read()
             
             # Split into individual statements and execute only for missing tables
             statements = [s.strip() for s in schema_sql.split(';') if s.strip()]
+            
+            # Ejecutar todas las sentencias en una transacción
             for stmt in statements:
                 try:
-                    # Only execute statements for missing tables
+                    # Solo ejecutar sentencias para tablas faltantes
                     if any(table in stmt.lower() for table in missing_tables):
                         cursor.execute(stmt)
+                        logger.debug(f"Executed: {stmt}")
                 except psycopg2.errors.DuplicateTable:
                     logger.debug(f"Table already exists, skipping: {stmt.split()[2]}")
-                    conn.rollback()
+                    # No hacer rollback aquí, continuar con las siguientes sentencias
                 except Exception as e:
                     logger.error(f"Error executing schema statement: {e}")
+                    logger.error(f"Failed statement: {stmt}")
+                    conn.rollback()
                     raise
             
             conn.commit()
             logger.info(f"Successfully created {len(missing_tables)} missing tables")
+            
+            # Verificar que las tablas se crearon realmente
+            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+            existing_tables = [table[0] for table in cursor.fetchall()]
+            logger.debug(f"Tables after creation: {existing_tables}")
+            
         else:
             logger.debug("All required tables exist.")
+
+        # Verificar y agregar columnas faltantes a tablas existentes
+        logger.debug("Checking for missing columns in existing tables...")
+        check_and_add_missing_columns(conn)
+        logger.debug("Finished checking for missing columns.")
 
     except Exception as e:
         logger.error("Error initializing schema:")
         logger.error(traceback.format_exc())
+        if conn:
+            conn.rollback()
         raise
     finally:
         if conn:
             conn.close()
+
+def check_and_add_missing_columns(conn):
+    """Check for missing columns in existing tables and add them if needed."""
+    cursor = conn.cursor()
+    try:
+        # Columnas requeridas para la tabla productos
+        required_columns = {
+            'productos': [
+                ('stock', 'INTEGER'),
+                ('precio_compra', 'DECIMAL(10,2)'),
+                ('es_servicio', 'BOOLEAN DEFAULT FALSE')
+            ]
+        }
+        
+        for table_name, columns in required_columns.items():
+            # Verificar si la tabla existe
+            cursor.execute(f"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '{table_name}');")
+            table_exists = cursor.fetchone()[0]
+            
+            if table_exists:
+                for column_name, column_type in columns:
+                    # Verificar si la columna existe
+                    cursor.execute(f"SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '{table_name}' AND column_name = '{column_name}');")
+                    column_exists = cursor.fetchone()[0]
+                    
+                    if not column_exists:
+                        logger.info(f"Adding missing column '{column_name}' to table '{table_name}'...")
+                        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type};")
+                        logger.info(f"Column '{column_name}' added successfully to table '{table_name}'")
+        
+        conn.commit()
+        
+    except Exception as e:
+        logger.error(f"Error checking/adding missing columns: {e}")
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
 
 # Crear el pool de conexiones
 try:
