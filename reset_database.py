@@ -16,6 +16,11 @@ def reset_database():
         logging.error("Por favor, configúrala con la URL de tu base de datos de Render.")
         return
 
+    # Asegurarse de que el modo SSL esté activado para Render
+    if "render.com" in database_url and "?sslmode" not in database_url:
+        database_url += "?sslmode=require"
+        logging.info("Modo SSL 'require' añadido a la URL de la base de datos.")
+
     conn = None
     cursor = None
     try:

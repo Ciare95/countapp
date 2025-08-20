@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 # Check for DATABASE_URL from Render/Heroku environment
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
+    # Ensure SSL mode is set for Render connections
+    if "render.com" in database_url and "sslmode" not in database_url:
+        database_url += "?sslmode=require"
     result = urlparse(database_url)
     dbconfig = {
         "user": result.username,
@@ -64,9 +67,13 @@ def create_pool():
 
         logger.debug("Intentando crear pool de conexiones (Postgres)...")
 
-        # Create connection string with proper encoding
-        conn_string = f"host={dbconfig['host']} user={dbconfig['user']} password={dbconfig['password']} dbname={dbconfig['database']} port={dbconfig['port']} client_encoding=utf8"
-        
+        # Use the full database_url if available, otherwise construct it
+        if database_url:
+            conn_string = database_url
+        else:
+            # Create connection string with proper encoding for local dev
+            conn_string = f"host={dbconfig['host']} user={dbconfig['user']} password={dbconfig['password']} dbname={dbconfig['database']} port={dbconfig['port']} client_encoding=utf8"
+
         connection_pool = pool.SimpleConnectionPool(
             1,                    # minconn
             15,                   # maxconn
