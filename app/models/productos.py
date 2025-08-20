@@ -121,7 +121,7 @@ class Producto:
                     p.stock,
                     p.precio,
                     p.precio_compra,
-                    p.id_categorias AS categoria_id,
+                    p.id_categoria AS categoria_id,
                     (p.precio - p.precio_compra) AS ganancia_neta,
                     CASE 
                         WHEN p.precio > 0 THEN ((p.precio - p.precio_compra) * 100 / p.precio)
@@ -130,7 +130,7 @@ class Producto:
                 FROM 
                     productos p
                 LEFT JOIN 
-                    categorias c ON p.id_categorias = c.id
+                    categorias c ON p.id_categoria = c.id
             """
             cursor.execute(sql)
             resultados = cursor.fetchall()
