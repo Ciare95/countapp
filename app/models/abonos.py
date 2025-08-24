@@ -1,4 +1,5 @@
 from app.db import connection_pool
+from psycopg2.extras import DictCursor
 
 
 class AbonoModel:
@@ -7,7 +8,7 @@ class AbonoModel:
         connection = connection_pool.getconn()
         cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor(cursor_factory=DictCursor)
             cursor.execute("SELECT saldo, estado FROM ventas WHERE id = %s", (id_venta,))
             return cursor.fetchone()
         finally:
@@ -78,7 +79,7 @@ class AbonoModel:
         connection = connection_pool.getconn()
         cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor(cursor_factory=DictCursor)
             cursor.execute("SELECT id, monto, fecha_abono FROM abonos WHERE id_venta = %s", (id_venta,))
             return cursor.fetchall()
         finally:
