@@ -59,7 +59,7 @@ def crear_venta():
            'category': 'danger'
        }), 400
 
-   connection = connection_pool.get_connection()
+   connection = connection_pool.getconn()
    cursor = connection.cursor()
 
    try:
@@ -132,7 +132,7 @@ def crear_venta():
 
    finally:
        cursor.close()
-       connection.close()
+       connection_pool.putconn(connection)
        
        
 
@@ -152,7 +152,7 @@ def asociar_cliente():
         return jsonify({'error': 'Datos incompletos.'}), 400
 
     # Verificar si el cliente existe
-    conexion = connection_pool.get_connection()
+    conexion = connection_pool.getconn()
     cursor = conexion.cursor()
     cursor.execute("SELECT COUNT(*) FROM clientes WHERE id = %s", (id_cliente,))
     cliente_existe = cursor.fetchone()[0] > 0
@@ -172,13 +172,13 @@ def asociar_cliente():
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
-        conexion.close()
+        connection_pool.putconn(conexion)
 
 @venta_bp.route('/ver/<int:id_venta>', methods=['GET'])
 def ver_venta(id_venta):
     try:
         # Obtener los detalles de la venta
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = conexion.cursor(dictionary=True)
 
         # Información de la venta
@@ -236,7 +236,7 @@ def ver_venta(id_venta):
         return "Error interno", 500
     finally:
         cursor.close()
-        conexion.close()
+        connection_pool.putconn(conexion)
 
 
             
@@ -244,7 +244,7 @@ def ver_venta(id_venta):
 @venta_bp.route('/factura/<int:id_venta>/pdf', methods=['GET'])
 def generar_factura_pdf(id_venta):
     try:
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         cursor = conexion.cursor(dictionary=True)
 
         # Obtener información del negocio
@@ -334,12 +334,12 @@ def generar_factura_pdf(id_venta):
         return "Error al generar PDF", 500
     finally:
         cursor.close()
-        conexion.close()
+        connection_pool.putconn(conexion)
         
 
 @venta_bp.route('/ventas_categoria')
 def ventas_categoria():
-    connection = connection_pool.get_connection()
+    connection = connection_pool.getconn()
     cursor = connection.cursor(dictionary=True)
     
     # Get filter parameters or use current date as default
@@ -375,7 +375,7 @@ def ventas_categoria():
     ventas_categoria = cursor.fetchall()
     
     cursor.close()
-    connection.close()
+    connection_pool.putconn(connection)
     
     return render_template('ventas/ventas_categoria.html', 
                          ventas_categoria=ventas_categoria,

@@ -161,7 +161,7 @@ def ingreso_producto():
 @producto_bp.route('/factura/<numero_factura>')
 def obtener_productos_factura(numero_factura):
     try:
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = connection.cursor(dictionary=True)
 
         # Primero obtener el ID de la factura
@@ -172,7 +172,7 @@ def obtener_productos_factura(numero_factura):
 
         if not factura:
             cursor.close()
-            connection.close()
+            connection_pool.putconn(connection)
             return jsonify({'error': 'Factura no encontrada'}), 404
 
         # Obtener los productos de la factura
@@ -214,7 +214,7 @@ def obtener_productos_factura(numero_factura):
 @producto_bp.route('/registro_ingresos/agregar_producto', methods=['POST'])
 def agregar_producto():
     try:
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = connection.cursor(dictionary=True)
         data = request.get_json()
 
@@ -229,7 +229,7 @@ def agregar_producto():
 
         if not factura:
             cursor.close()
-            connection.close()
+            connection_pool.putconn(connection)
             return jsonify({'error': 'Factura no encontrada'}), 404
 
         # Actualizar el producto en la tabla productos
@@ -292,7 +292,7 @@ def agregar_producto():
 @producto_bp.route('/eliminar_producto/<int:producto_id>', methods=['DELETE'])
 def eliminar_producto_factura(producto_id):
     try:
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = connection.cursor(dictionary=True)
 
         # Iniciar transacción
