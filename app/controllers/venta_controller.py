@@ -41,6 +41,10 @@ def crear_venta():
 
    id_usuario = current_user.id
 
+   # Validar payload de productos antes de procesar
+   if not isinstance(productos, list) or any((not isinstance(p, dict) or 'id' not in p or 'cantidad' not in p) for p in productos):
+       return jsonify({'error': 'Formato de productos inválido.', 'message': 'Cada producto debe contener id y cantidad.', 'category': 'danger'}), 400
+
    if not productos:
        return jsonify({
            'error': 'No se enviaron productos.',
