@@ -66,11 +66,12 @@ def crear_venta():
            """
            INSERT INTO ventas (fecha_venta, total_venta, id_cliente, id_usuarios, estado, saldo)
            VALUES (NOW(), %s, %s, %s, %s, %s)
+           RETURNING id
            """,
            (total, id_cliente, id_usuario, estado, saldo)
        )
-       connection.commit()
-       id_venta = cursor.lastrowid
+       id_venta = cursor.fetchone()[0]
+       # La conexión se confirma al final si todo es exitoso.
 
        for producto in productos:
         id_producto = producto['id']
@@ -119,6 +120,7 @@ def crear_venta():
 
    except Exception as e:
        connection.rollback()
+       logging.error(f"Error al crear la venta: {e}", exc_info=True)
        return jsonify({
            'error': str(e),
            'message': f"Error al crear la venta: {str(e)}",
