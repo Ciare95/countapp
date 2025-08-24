@@ -30,11 +30,11 @@ class ProductoFabricado:
     @staticmethod
     def obtener_todos():
         query = "SELECT * FROM productos_fabricados"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor(dictionary=True) as cursor:
             cursor.execute(query)
             resultados = cursor.fetchall()
-        connection.close()
+        db.putconn(connection)
 
         # Calcular ganancia neta y porcentaje de rentabilidad
         productos = []
@@ -60,11 +60,11 @@ class ProductoFabricado:
     @staticmethod
     def obtener_por_id(producto_id):
         query = "SELECT * FROM productos_fabricados WHERE id = %s"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor(dictionary=True) as cursor:
             cursor.execute(query, (producto_id,))
             resultado = cursor.fetchone()
-        connection.close()
+        db.putconn(connection)
 
         if resultado:
             # Calcular ganancia neta y porcentaje de rentabilidad
@@ -91,11 +91,11 @@ class ProductoFabricado:
             INSERT INTO productos_fabricados (nombre, unidad_medida, costo_total, precio_venta, cantidad_producida)
             VALUES (%s, %s, %s, %s, %s)
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (nombre, unidad_medida, costo_total, precio_venta, cantidad_producida))
             connection.commit()
-        connection.close()
+        db.putconn(connection)
 
 
     @staticmethod
@@ -105,20 +105,20 @@ class ProductoFabricado:
         SET nombre = %s, unidad_medida = %s, cantidad_producida = %s, precio_venta = %s
         WHERE id = %s
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (nombre, unidad_medida, cantidad_producida, precio_venta, producto_id))
             connection.commit()
-        connection.close()
+        db.putconn(connection)
 
     @staticmethod
     def eliminar(producto_id):
         query = "DELETE FROM productos_fabricados WHERE id = %s"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (producto_id,))
             connection.commit()
-        connection.close()
+        db.putconn(connection)
 
     
     def obtener_ingredientes(self):
@@ -136,11 +136,11 @@ class ProductoFabricado:
             JOIN ingredientes i ON ip.ingrediente_id = i.id
             WHERE ip.producto_id = %s
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor(dictionary=True) as cursor:
             cursor.execute(query, (self.id,))
             resultados = cursor.fetchall()
-        connection.close()
+        db.putconn(connection)
         
         
         return resultados
@@ -149,8 +149,8 @@ class ProductoFabricado:
     @staticmethod
     def actualizar_costo_total(producto_id, costo_total):
         query = "UPDATE productos_fabricados SET costo_total = %s WHERE id = %s"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (costo_total, producto_id))
             connection.commit()
-        connection.close()
+        db.putconn(connection)

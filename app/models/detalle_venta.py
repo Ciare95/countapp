@@ -12,7 +12,7 @@ class DetalleVenta:
     @staticmethod
     def guardar(detalle):
         """Guarda un detalle de venta en la base de datos."""
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = connection.cursor()
 
         query = """
@@ -24,4 +24,4 @@ class DetalleVenta:
         cursor.execute(query, values)
         connection.commit()
         cursor.close()
-        connection.close()
+        connection_pool.putconn(connection)

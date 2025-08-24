@@ -4,7 +4,7 @@ from app.db import connection_pool
 class AbonoModel:
     @staticmethod
     def obtener_venta(id_venta):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
@@ -13,11 +13,11 @@ class AbonoModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            connection_pool.putconn(connection)
 
     @staticmethod
     def registrar_abono(id_venta, monto):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -36,11 +36,11 @@ class AbonoModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            connection_pool.putconn(connection)
 
     @staticmethod
     def actualizar_saldo(id_venta, nuevo_saldo, estado):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -54,11 +54,11 @@ class AbonoModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            connection_pool.putconn(connection)
 
     @staticmethod
     def verificar_saldo(id_venta):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor()
@@ -71,11 +71,11 @@ class AbonoModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            connection_pool.putconn(connection)
 
     @staticmethod
     def obtener_abonos(id_venta):
-        connection = connection_pool.get_connection()
+        connection = connection_pool.getconn()
         cursor = None
         try:
             cursor = connection.cursor(dictionary=True)
@@ -84,4 +84,4 @@ class AbonoModel:
         finally:
             if cursor:
                 cursor.close()
-            connection.close()
+            connection_pool.putconn(connection)
