@@ -100,10 +100,10 @@ def crear_venta():
         # Insertar el detalle de la venta (tanto para productos como servicios)
         cursor.execute(
             """
-            INSERT INTO detalle_ventas (id_ventas, id_productos, id_clientes, id_usuarios, cantidad)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO detalle_ventas (id_ventas, id_productos, cantidad)
+            VALUES (%s, %s, %s)
             """,
-            (id_venta, id_producto, id_cliente, id_usuario, cantidad)
+            (id_venta, id_producto, cantidad)
         )
 
        if monto_abono > 0:
