@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, flash, make_response
-from flask_login import current_user
+from flask_login import current_user, login_required
 from datetime import datetime
 from app.models.abonos import AbonoModel
 import pdfkit
@@ -14,6 +14,7 @@ def formato_peso_colombiano(valor):
 
 
 @venta_bp.route('/crear', methods=['POST'])
+@login_required
 def crear_venta():
    data = request.json
    productos = data.get('productos')
@@ -23,13 +24,15 @@ def crear_venta():
    saldo = total if estado != 'cancelada' else 0
    monto_abono = float(data.get('monto_abono', 0))
 
-   id_usuario = current_user.id if hasattr(current_user, 'id') else data.get('id_usuario')
-   if not id_usuario:
+   # Asegurarse de que el usuario está autenticado
+   if not current_user.is_authenticated:
        return jsonify({
-           'error': 'El ID del usuario es obligatorio.',
-           'message': 'El ID del usuario es obligatorio.',
+           'error': 'Usuario no autenticado.',
+           'message': 'Debe iniciar sesión para realizar esta acción.',
            'category': 'danger'
-       }), 400
+       }), 401
+
+   id_usuario = current_user.id
 
    if not productos:
        return jsonify({
