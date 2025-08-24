@@ -34,7 +34,7 @@ def crear_venta():
    total = data.get('total')
    id_cliente = data.get('id_cliente')
    estado = data.get('estado', 'pendiente')
-   saldo = total if estado != 'cancelada' else 0
+   saldo = float(total) if estado != 'cancelada' else 0.0
    monto_abono = float(data.get('monto_abono', 0))
 
    # Asegurarse de que el usuario está autenticado

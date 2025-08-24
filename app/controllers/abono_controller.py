@@ -23,7 +23,7 @@ def agregar_abono():
         flash('La venta ya está cancelada.', 'danger')
         return jsonify({'error': 'La venta ya está cancelada.'}), 400
 
-    saldo_actual = venta['saldo']
+    saldo_actual = float(venta['saldo'])  # Convert to float to match monto type
 
     if monto > saldo_actual:
         flash('El abono no puede exceder el saldo actual.', 'danger')
@@ -58,7 +58,7 @@ def registrar_abono():
         if not venta:
             return jsonify({'error': 'Venta no encontrada.'}), 404
 
-        saldo_actual = venta['saldo']
+        saldo_actual = float(venta['saldo'])  # Convert to float to match monto_abono type
         if monto_abono > saldo_actual:
             return jsonify({'error': 'El abono no puede exceder el saldo actual.'}), 400
 
