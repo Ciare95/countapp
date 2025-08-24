@@ -12,6 +12,12 @@ def formato_peso_colombiano(valor):
         return "0"
     return f"{'{:,.0f}'.format(float(valor)).replace(',', '.')}"
 
+def row_to_dict(cursor, row):
+    """Convert a database row (tuple) to a dictionary using cursor description"""
+    if row is None:
+        return None
+    return {desc[0]: value for desc, value in zip(cursor.description, row)}
+
 
 from flask import current_app
 
@@ -195,11 +201,14 @@ def ver_venta(id_venta):
             LEFT JOIN usuarios u ON v.id_usuarios = u.id
             WHERE v.id = %s
         """, (id_venta,))
-        venta = cursor.fetchone()
+        venta_tuple = cursor.fetchone()
 
-        if not venta:
+        if not venta_tuple:
             flash("Venta no encontrada.", "danger")
             return "Venta no encontrada", 404
+
+        # Convertir tupla a diccionario
+        venta = row_to_dict(cursor, venta_tuple)
 
         # Formatear valores monetarios
         venta['total_venta'] = formato_peso_colombiano(venta['total_venta'])
@@ -212,12 +221,15 @@ def ver_venta(id_venta):
             JOIN productos p ON dv.id_productos = p.id
             WHERE dv.id_ventas = %s
         """, (id_venta,))
-        detalles = cursor.fetchall()
-
-        # Formatear precios y subtotales
-        for detalle in detalles:
+        detalles_tuples = cursor.fetchall()
+        
+        # Convertir tuplas a diccionarios
+        detalles = []
+        for detalle_tuple in detalles_tuples:
+            detalle = row_to_dict(cursor, detalle_tuple)
             detalle['precio'] = formato_peso_colombiano(detalle['precio'])
             detalle['subtotal'] = formato_peso_colombiano(detalle['subtotal'])
+            detalles.append(detalle)
 
         # Obtener los abonos realizados
         cursor.execute("""
@@ -225,11 +237,14 @@ def ver_venta(id_venta):
             FROM abonos
             WHERE id_venta = %s
         """, (id_venta,))
-        abonos = cursor.fetchall()
-
-        # Formatear montos de abonos
-        for abono in abonos:
+        abonos_tuples = cursor.fetchall()
+        
+        # Convertir tuplas a diccionarios
+        abonos = []
+        for abono_tuple in abonos_tuples:
+            abono = row_to_dict(cursor, abono_tuple)
             abono['monto'] = formato_peso_colombiano(abono['monto'])
+            abonos.append(abono)
 
         return render_template(
             'ventas/ver.html',
