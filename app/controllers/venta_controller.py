@@ -249,6 +249,8 @@ def ver_venta(id_venta):
                        
 @venta_bp.route('/factura/<int:id_venta>/pdf', methods=['GET'])
 def generar_factura_pdf(id_venta):
+    conexion = None
+    cursor = None
     try:
         conexion = connection_pool.getconn()
         cursor = conexion.cursor(dictionary=True)
@@ -339,8 +341,10 @@ def generar_factura_pdf(id_venta):
         print(f"Error al generar PDF: {e}")
         return "Error al generar PDF", 500
     finally:
-        cursor.close()
-        connection_pool.putconn(conexion)
+        if cursor:
+            cursor.close()
+        if conexion:
+            connection_pool.putconn(conexion)
         
 
 @venta_bp.route('/ventas_categoria')
