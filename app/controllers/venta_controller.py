@@ -171,11 +171,15 @@ def asociar_cliente():
         flash(f"Error al asociar el cliente: {str(e)}", "danger")
         return jsonify({'error': str(e)}), 500
     finally:
-        cursor.close()
-        connection_pool.putconn(conexion)
+        if cursor:
+            cursor.close()
+        if conexion:
+            connection_pool.putconn(conexion)
 
 @venta_bp.route('/ver/<int:id_venta>', methods=['GET'])
 def ver_venta(id_venta):
+    conexion = None
+    cursor = None
     try:
         # Obtener los detalles de la venta
         conexion = connection_pool.getconn()
@@ -235,8 +239,10 @@ def ver_venta(id_venta):
         flash("Error al obtener detalles de la venta.", "danger")
         return "Error interno", 500
     finally:
-        cursor.close()
-        connection_pool.putconn(conexion)
+        if cursor:
+            cursor.close()
+        if conexion:
+            connection_pool.putconn(conexion)
 
 
             
