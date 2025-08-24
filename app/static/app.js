@@ -307,6 +307,15 @@ document.getElementById('crearVentaDirecta').addEventListener('click', async () 
     }
 
     try {
+        console.log("Enviando datos de venta:", {
+            id_cliente: clienteId,
+            productos: carrito,
+            total: total,
+            estado: estado,
+            saldo: saldo,
+            monto_abono: montoAbono,
+        });
+
         const response = await fetch('/ventas/crear', {
             method: 'POST',
             headers: {
@@ -323,11 +332,16 @@ document.getElementById('crearVentaDirecta').addEventListener('click', async () 
             })
         });
 
-        const data = await response.json();
+        console.log("Respuesta del servidor:", response);
 
         if (!response.ok) {
-            throw new Error(data.message || 'Error al crear la venta');
+            const errorText = await response.text();
+            console.error("Error en la respuesta del servidor:", errorText);
+            throw new Error('Error al crear la venta');
         }
+
+        const data = await response.json();
+        console.log("Datos recibidos del servidor:", data);
 
         showFlashMessage(data.message, data.category);
 

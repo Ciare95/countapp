@@ -13,10 +13,20 @@ def formato_peso_colombiano(valor):
     return f"{'{:,.0f}'.format(float(valor)).replace(',', '.')}"
 
 
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.DEBUG)
+
 @venta_bp.route('/crear', methods=['POST'])
 @login_required
 def crear_venta():
+   logging.debug(f"Usuario autenticado: {current_user.is_authenticated}")
+   if current_user.is_authenticated:
+       logging.debug(f"ID de usuario: {current_user.id}")
+
    data = request.json
+   logging.debug(f"Datos recibidos: {data}")
    productos = data.get('productos')
    total = data.get('total')
    id_cliente = data.get('id_cliente')
