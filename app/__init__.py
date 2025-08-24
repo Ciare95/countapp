@@ -1,5 +1,6 @@
 from flask import Flask, redirect, url_for, render_template, session, request
 from flask_cors import CORS
+from psycopg2.extras import DictCursor
 
 
 from app.controllers import (
@@ -85,7 +86,7 @@ def create_app():
             return redirect(url_for('usuario.login'))
         try:
             connection = connection_pool.getconn()
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor(cursor_factory=DictCursor)
             cursor.execute("SELECT id, nombre FROM categorias")
             categorias = cursor.fetchall()
         except Exception as e:
