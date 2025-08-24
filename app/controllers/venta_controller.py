@@ -181,9 +181,11 @@ def ver_venta(id_venta):
     conexion = None
     cursor = None
     try:
+        current_app.logger.debug(f"Intentando obtener detalles de venta ID: {id_venta}")
         # Obtener los detalles de la venta
         conexion = connection_pool.getconn()
         cursor = conexion.cursor(dictionary=True)
+        current_app.logger.debug("Conexión y cursor creados exitosamente")
 
         # Información de la venta
         cursor.execute("""
@@ -236,6 +238,7 @@ def ver_venta(id_venta):
             abonos=abonos
         )
     except Exception as e:
+        current_app.logger.error(f"Error al obtener detalles de la venta {id_venta}: {e}", exc_info=True)
         flash("Error al obtener detalles de la venta.", "danger")
         return "Error interno", 500
     finally:
