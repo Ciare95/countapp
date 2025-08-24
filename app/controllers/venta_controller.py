@@ -13,20 +13,17 @@ def formato_peso_colombiano(valor):
     return f"{'{:,.0f}'.format(float(valor)).replace(',', '.')}"
 
 
-import logging
-
-# Configurar logging
-logging.basicConfig(level=logging.DEBUG)
+from flask import current_app
 
 @venta_bp.route('/crear', methods=['POST'])
 @login_required
 def crear_venta():
-   logging.debug(f"Usuario autenticado: {current_user.is_authenticated}")
+   current_app.logger.debug(f"Usuario autenticado: {current_user.is_authenticated}")
    if current_user.is_authenticated:
-       logging.debug(f"ID de usuario: {current_user.id}")
+       current_app.logger.debug(f"ID de usuario: {current_user.id}")
 
    data = request.json
-   logging.debug(f"Datos recibidos: {data}")
+   current_app.logger.debug(f"Datos recibidos: {data}")
    productos = data.get('productos')
    total = data.get('total')
    id_cliente = data.get('id_cliente')
@@ -62,6 +59,7 @@ def crear_venta():
    cursor = connection.cursor()
 
    try:
+       current_app.logger.debug("Ejecutando inserción en la tabla de ventas...")
        cursor.execute(
            """
            INSERT INTO ventas (fecha_venta, total_venta, id_cliente, id_usuarios, estado, saldo)
@@ -71,6 +69,7 @@ def crear_venta():
            (total, id_cliente, id_usuario, estado, saldo)
        )
        id_venta = cursor.fetchone()[0]
+       current_app.logger.debug(f"Venta creada con ID: {id_venta}")
        # La conexión se confirma al final si todo es exitoso.
 
        for producto in productos:
@@ -120,7 +119,7 @@ def crear_venta():
 
    except Exception as e:
        connection.rollback()
-       logging.error(f"Error al crear la venta: {e}", exc_info=True)
+       current_app.logger.error(f"Error al crear la venta: {e}", exc_info=True)
        return jsonify({
            'error': str(e),
            'message': f"Error al crear la venta: {str(e)}",
