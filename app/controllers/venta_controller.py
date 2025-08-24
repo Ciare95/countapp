@@ -184,7 +184,7 @@ def ver_venta(id_venta):
         current_app.logger.debug(f"Intentando obtener detalles de venta ID: {id_venta}")
         # Obtener los detalles de la venta
         conexion = connection_pool.getconn()
-        cursor = conexion.cursor(dictionary=True)
+        cursor = conexion.cursor()
         current_app.logger.debug("Conexión y cursor creados exitosamente")
 
         # Información de la venta
@@ -256,7 +256,7 @@ def generar_factura_pdf(id_venta):
     cursor = None
     try:
         conexion = connection_pool.getconn()
-        cursor = conexion.cursor(dictionary=True)
+        cursor = conexion.cursor()
 
         # Obtener información del negocio
         cursor.execute("SELECT * FROM negocios LIMIT 1")
@@ -353,7 +353,7 @@ def generar_factura_pdf(id_venta):
 @venta_bp.route('/ventas_categoria')
 def ventas_categoria():
     connection = connection_pool.getconn()
-    cursor = connection.cursor(dictionary=True)
+    cursor = connection.cursor()
     
     # Get filter parameters or use current date as default
     fecha = request.args.get('fecha', datetime.now().strftime('%Y-%m-%d'))
