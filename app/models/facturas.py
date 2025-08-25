@@ -140,7 +140,8 @@ class FacturaModel:
             WHERE f.numero_factura = %s
             """
             cursor.execute(sql, (numero_factura,))
-            productos = cursor.fetchall()
+            productos_raw = cursor.fetchall()
+            productos = [dict(row) for row in productos_raw]
 
             # Convertir los valores numéricos a float y manejar valores nulos
             for producto in productos:
