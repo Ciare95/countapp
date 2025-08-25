@@ -1,5 +1,6 @@
 from flask import jsonify, render_template, request, redirect, url_for, Blueprint, flash
 import decimal
+from psycopg2.extras import DictCursor
 from app.models.categorias import Categoria
 from app.models.productos import Producto
 from app.db import connection_pool
@@ -162,7 +163,7 @@ def ingreso_producto():
 def obtener_productos_factura(numero_factura):
     try:
         connection = connection_pool.getconn()
-        cursor = connection.cursor(dictionary=True)
+        cursor = connection.cursor(cursor_factory=DictCursor)
 
         # Primero obtener el ID de la factura
         cursor.execute("""
@@ -213,87 +214,61 @@ def obtener_productos_factura(numero_factura):
 
 @producto_bp.route('/registro_ingresos/agregar_producto', methods=['POST'])
 def agregar_producto():
+    connection = None
+    cursor = None
     try:
         connection = connection_pool.getconn()
-        cursor = connection.cursor(dictionary=True)
+        cursor = connection.cursor(cursor_factory=DictCursor)
         data = request.get_json()
 
         # Iniciar transacción
-        connection.start_transaction()
+        connection.autocommit = False
 
         # Obtener el ID de la factura
-        cursor.execute("""
-            SELECT id FROM facturas WHERE numero_factura = %s
-        """, (data['numero_factura'],))
+        cursor.execute("SELECT id FROM facturas WHERE numero_factura = %s", (data['numero_factura'],))
         factura = cursor.fetchone()
 
         if not factura:
-            cursor.close()
-            connection_pool.putconn(connection)
             return jsonify({'error': 'Factura no encontrada'}), 404
 
         # Actualizar el producto en la tabla productos
-        cursor.execute("""
-            UPDATE productos 
-            SET stock = stock + %s,
-                precio = %s,
-                precio_compra = %s
-            WHERE id = %s
-        """, (
-            int(data['cantidad']),
-            float(data['precio_venta']),
-            float(data['precio_compra']),
-            int(data['id_producto'])
-        ))
+        cursor.execute(
+            "UPDATE productos SET stock = stock + %s, precio = %s, precio_compra = %s WHERE id = %s",
+            (int(data['cantidad']), float(data['precio_venta']), float(data['precio_compra']), int(data['id_producto']))
+        )
 
         # Insertar el nuevo producto en productos_factura
-        cursor.execute("""
-            INSERT INTO productos_factura 
-            (id_factura, id_producto, cantidad, precio_compra, precio_venta, porcentaje_iva)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (
-            factura['id'],
-            data['id_producto'],
-            data['cantidad'],
-            data['precio_compra'],
-            data['precio_venta'],
-            data['porcentaje_iva']
-        ))
+        cursor.execute(
+            "INSERT INTO productos_factura (id_factura, id_producto, cantidad, precio_compra, precio_venta, porcentaje_iva) VALUES (%s, %s, %s, %s, %s, %s)",
+            (factura['id'], data['id_producto'], data['cantidad'], data['precio_compra'], data['precio_venta'], data['porcentaje_iva'])
+        )
 
         # Calcular y actualizar el total de la factura
-        cursor.execute("""
-            SELECT SUM(precio_compra * cantidad) as total
-            FROM productos_factura
-            WHERE id_factura = %s
-        """, (factura['id'],))
+        cursor.execute("SELECT SUM(precio_compra * cantidad) as total FROM productos_factura WHERE id_factura = %s", (factura['id'],))
         total = cursor.fetchone()['total'] or 0
 
-        cursor.execute("""
-            UPDATE facturas 
-            SET total = %s 
-            WHERE id = %s
-        """, (total, factura['id']))
+        cursor.execute("UPDATE facturas SET total = %s WHERE id = %s", (total, factura['id']))
 
         # Confirmar la transacción
         connection.commit()
-        cursor.close()
-        connection.close()
         
         return jsonify({'message': 'Producto agregado exitosamente y stock actualizado'})
 
     except Exception as e:
-        # Revertir cambios si hay error
-        if 'connection' in locals():
+        if connection:
             connection.rollback()
-            cursor.close()
-            connection.close()
         return jsonify({'error': str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection_pool.putconn(connection)
 
 @producto_bp.route('/eliminar_producto/<int:producto_id>', methods=['DELETE'])
 def eliminar_producto_factura(producto_id):
     try:
         connection = connection_pool.getconn()
-        cursor = connection.cursor(dictionary=True)
+        cursor = connection.cursor(cursor_factory=DictCursor)
 
         # Iniciar transacción
         connection.start_transaction()
