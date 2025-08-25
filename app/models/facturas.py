@@ -1,5 +1,6 @@
 from app.db import connection_pool as mysql
 import locale
+import psycopg2.extras
 
 try:
     locale.setlocale(locale.LC_ALL, 'es_CO.UTF-8')
@@ -81,7 +82,7 @@ class FacturaModel:
     @staticmethod
     def obtener_todas_las_facturas():
         connection = mysql.getconn()
-        cur = connection.cursor(dictionary=True)
+        cur = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
             cur.execute("""
                 SELECT f.*, p.nombre as proveedor_nombre
@@ -117,8 +118,8 @@ class FacturaModel:
             
     @staticmethod
     def obtener_productos_factura(numero_factura):
-        conection = mysql.getconn()
-        cursor = conection.cursor(dictionary=True)
+        connection = mysql.getconn()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
             sql = """
             SELECT 
@@ -162,5 +163,5 @@ class FacturaModel:
         finally:
             if cursor:
                 cursor.close()
-            if conection:
-                mysql.putconn(conection)
+            if connection:
+                mysql.putconn(connection)
