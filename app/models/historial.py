@@ -112,8 +112,8 @@ class HistorialModel:
             if estado != 'todas':
                 query += " AND v.estado = %s"
             
-            # Ordenar por fecha
-            query += " GROUP BY v.id ORDER BY v.fecha_venta DESC"
+            # Ordenar por fecha - incluir todas las columnas no agregadas en el GROUP BY
+            query += " GROUP BY v.id, v.fecha_venta, v.estado, v.saldo, u.nombre ORDER BY v.fecha_venta DESC"
             
             # Ejecutar la consulta
             if estado != 'todas':
