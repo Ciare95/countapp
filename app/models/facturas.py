@@ -90,10 +90,15 @@ class FacturaModel:
                 LEFT JOIN proveedores p ON f.id_proveedor = p.id
                 ORDER BY f.fecha_factura DESC
             """)
-            facturas = cur.fetchall()
+            facturas_raw = cur.fetchall()
+            
+            # Convertir a una lista de diccionarios estándar
+            facturas = [dict(row) for row in facturas_raw]
+            
             # Formatear el total a pesos colombianos
             for factura in facturas:
-                factura['total_formato'] = FacturaModel.formato_pesos(factura['total'])
+                factura['total_formato'] = FacturaModel.formato_pesos(factura.get('total'))
+            
             return facturas
         finally:
             cur.close()

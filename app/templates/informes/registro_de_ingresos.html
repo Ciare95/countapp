@@ -148,8 +148,10 @@
         document.addEventListener('click', (e) => {
             const suggestionsList = document.getElementById('product-suggestions');
             const inputProducto = document.getElementById('id-producto');
-            if (!suggestionsList.contains(e.target) && e.target !== inputProducto) {
-                suggestionsList.style.display = 'none';
+            if (suggestionsList && inputProducto) {
+                if (!suggestionsList.contains(e.target) && e.target !== inputProducto) {
+                    suggestionsList.style.display = 'none';
+                }
             }
         });
 
