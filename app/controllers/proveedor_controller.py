@@ -28,43 +28,42 @@ def listar_proveedores():
 @proveedor_bp.route('/crear', methods=['POST'])
 def crear_proveedor():
     try:
-        data = request.json  #Recibe en formato json
+        data = request.json  # Recibe en formato json
         nombre = data.get('nombre')
         nit = data.get('nit')
         telefono = data.get('telefono')
+        
+        # Validación básica
+        if not nombre:
+            return jsonify({"success": False, "message": "El campo 'Nombre' es obligatorio."}), 400
+            
         if ProveedorModel.crear_proveedor(nombre, nit, telefono):
-            flash("Proveedor creado exitosamente.", "success")
-            return redirect(url_for('proveedor.listar_proveedores'))
-        flash("Error al crear el proveedor.", "danger")
-        return redirect(url_for('proveedor.listar_proveedores'))
+            return jsonify({"success": True, "message": "Proveedor creado exitosamente."}), 201
+        else:
+            return jsonify({"success": False, "message": "Error al crear el proveedor."}), 500
     except Exception as e:
         print(f"Error: {e}")
-        flash("Error al crear el proveedor. Inténtalo nuevamente.", "danger")
-        return redirect(url_for('proveedor.listar_proveedores'))
+        return jsonify({"success": False, "message": "Error al crear el proveedor. Inténtalo nuevamente."}), 500
 
 
 @proveedor_bp.route('/actualizar/<int:id>', methods=['POST'])
 def actualizar_proveedor(id):
     try:
-        data = request.json  # Cambiado a `request.json` para JSON
+        data = request.json  # Recibe en formato JSON
         nombre = data.get('nombre')
         nit = data.get('nit')
         telefono = data.get('telefono')
 
-        if not nombre:  # Validación adicional en el backend
-            flash("El campo 'Nombre' es obligatorio.", "danger")
-            return redirect(url_for('proveedor.listar_proveedores'))
+        if not nombre:  # Validación en el backend
+            return jsonify({"success": False, "message": "El campo 'Nombre' es obligatorio."}), 400
 
         if ProveedorModel.actualizar_proveedor(id, nombre, nit, telefono):
-            flash("Proveedor actualizado exitosamente.", "success")
-            return redirect(url_for('proveedor.listar_proveedores'))
-
-        flash("Error al actualizar el proveedor.", "danger")
-        return redirect(url_for('proveedor.listar_proveedores'))
+            return jsonify({"success": True, "message": "Proveedor actualizado exitosamente."}), 200
+        else:
+            return jsonify({"success": False, "message": "Error al actualizar el proveedor."}), 500
     except Exception as e:
         print(f"Error: {e}")
-        flash("Error al actualizar el proveedor. Inténtalo nuevamente.", "danger")
-        return redirect(url_for('proveedor.listar_proveedores'))
+        return jsonify({"success": False, "message": "Error al actualizar el proveedor. Inténtalo nuevamente."}), 500
 
 
 @proveedor_bp.route('/eliminar/<int:id>', methods=['POST'])
@@ -78,4 +77,3 @@ def eliminar_proveedor(id):
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"success": False, "message": "Error al eliminar el proveedor. Inténtalo nuevamente."}), 500
-
