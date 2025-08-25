@@ -89,8 +89,8 @@ def historial_cliente(cliente_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'status': 'success', 'data': ventas})
         
-        # Pasar el nombre del cliente a la plantilla
-        return render_template('ventas/historial_cliente.html', ventas=ventas, cliente_id=cliente_id, cliente_nombre=cliente['nombre'])
+        # Pasar el nombre del cliente a la plantilla - cliente es una tupla, acceder por índice
+        return render_template('ventas/historial_cliente.html', ventas=ventas, cliente_id=cliente_id, cliente_nombre=cliente[0])
     
     except Exception as e:
         error_message = f"Error al obtener las ventas del cliente {cliente_id}: {str(e)}"
