@@ -13,7 +13,7 @@ class InformeModel:
         connection = connection_pool.getconn()
         cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             
             # Ajustamos el where_clause para la tabla ventas
             where_ventas = where_clause.replace('fecha_registro', 'fecha_venta') if where_clause else ""
@@ -29,7 +29,7 @@ class InformeModel:
             cursor.execute(query, parametros or {})
             resultado = cursor.fetchone()
             
-            total_ingresos = float(resultado['total_ingresos']) if resultado['total_ingresos'] else 0.0
+            total_ingresos = float(resultado[0]) if resultado and resultado[0] else 0.0
             return InformeModel.formato_peso_colombiano(total_ingresos)
 
         finally:
@@ -43,7 +43,7 @@ class InformeModel:
         connection = connection_pool.getconn()
         cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             
             # Ajustamos los where_clause para cada tabla
             where_ventas = where_clause.replace('fecha_registro', 'fecha_venta') if where_clause else ""
@@ -75,15 +75,15 @@ class InformeModel:
             
             print("Query productos:", query_productos % (parametros or {}))
             cursor.execute(query_productos, parametros or {})
-            egresos_productos = float(cursor.fetchone()['egresos_productos'] or 0.0)
+            egresos_productos = float(cursor.fetchone()[0] or 0.0)
             
             print("Query facturas:", query_facturas % (parametros or {}))
             cursor.execute(query_facturas, parametros or {})
-            egresos_facturas = float(cursor.fetchone()['egresos_facturas'] or 0.0)
+            egresos_facturas = float(cursor.fetchone()[0] or 0.0)
             
             print("Query otros:", query_otros % (parametros or {}))
             cursor.execute(query_otros, parametros or {})
-            otros_egresos = float(cursor.fetchone()['otros_egresos'] or 0.0)
+            otros_egresos = float(cursor.fetchone()[0] or 0.0)
 
             # Convertimos todo a float antes de sumar
             total_egresos = egresos_productos + egresos_facturas + otros_egresos
@@ -117,19 +117,30 @@ class InformeModel:
         connection = connection_pool.getconn()
         cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             query = "SELECT * FROM otros_egresos"
             cursor.execute(query)
             resultados = cursor.fetchall()
             
-            # Formatea el valor de cada resultado
-            for resultado in resultados:
-                if resultado and resultado['valor'] is not None:
-                    resultado['valor_formato'] = InformeModel.formato_peso_colombiano(resultado['valor'])
-                else:
-                    resultado['valor_formato'] = InformeModel.formato_peso_colombiano(0.0)
+            # Convertir resultados de tuplas a diccionarios
+            formatted_results = []
+            column_names = [desc[0] for desc in cursor.description] if cursor.description else []
             
-            return resultados
+            for row in resultados:
+                resultado_dict = {}
+                for i, value in enumerate(row):
+                    if i < len(column_names):
+                        resultado_dict[column_names[i]] = value
+                
+                # Formatea el valor de cada resultado
+                if resultado_dict and resultado_dict.get('valor') is not None:
+                    resultado_dict['valor_formato'] = InformeModel.formato_peso_colombiano(resultado_dict['valor'])
+                else:
+                    resultado_dict['valor_formato'] = InformeModel.formato_peso_colombiano(0.0)
+                
+                formatted_results.append(resultado_dict)
+            
+            return formatted_results
             
         finally:
             if cursor:
