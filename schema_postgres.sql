@@ -66,6 +66,14 @@ CREATE TABLE abonos (
     monto NUMERIC(10,2) NOT NULL
 );
 
+-- Tabla de proveedores
+CREATE TABLE proveedores (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    nit VARCHAR(255),
+    telefono VARCHAR(15)
+);
+
 -- Tabla de facturas
 CREATE TABLE facturas (
     id SERIAL PRIMARY KEY,
@@ -163,14 +171,6 @@ CREATE TABLE productos_factura (
     precio_compra NUMERIC(10,2),
     precio_venta NUMERIC(10,2),
     porcentaje_iva NUMERIC(5,2)
-);
-
--- Tabla de proveedores
-CREATE TABLE proveedores (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    nit VARCHAR(255),
-    telefono VARCHAR(15)
 );
 
 -- Tabla de backup de clientes (opcional)

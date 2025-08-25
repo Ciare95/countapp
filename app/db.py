@@ -173,7 +173,7 @@ def initialize_schema():
         cursor = conn.cursor()
 
         # Check for each required table
-        required_tables = ['rol', 'usuarios', 'clientes', 'ventas', 'categorias', 'productos', 'detalle_ventas', 'abonos']
+        required_tables = ['rol', 'usuarios', 'clientes', 'ventas', 'categorias', 'productos', 'detalle_ventas', 'abonos', 'facturas', 'proveedores']
         missing_tables = []
         
         for table in required_tables:
