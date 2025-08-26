@@ -113,6 +113,16 @@ CREATE TABLE ingredientes_factura (
     costo_final NUMERIC(10,2)
 );
 
+-- Tabla de productos fabricados
+CREATE TABLE productos_fabricados (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    unidad_medida VARCHAR(20) CHECK (unidad_medida IN ('gramos','kilos','litros','mililitros','cc','galon','garrafa')) NOT NULL,
+    costo_total NUMERIC(20,2),
+    precio_venta NUMERIC(10,2) DEFAULT 0.00,
+    cantidad_producida NUMERIC(10,2) NOT NULL
+);
+
 -- Tabla de ingredientes por producto
 CREATE TABLE ingredientes_producto (
     id SERIAL PRIMARY KEY,
@@ -152,15 +162,6 @@ CREATE TABLE otros_egresos (
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de productos fabricados
-CREATE TABLE productos_fabricados (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    unidad_medida VARCHAR(20) CHECK (unidad_medida IN ('gramos','kilos','litros','mililitros','cc','galon','garrafa')) NOT NULL,
-    costo_total NUMERIC(20,2),
-    precio_venta NUMERIC(10,2) DEFAULT 0.00,
-    cantidad_producida NUMERIC(10,2) NOT NULL
-);
 
 -- Tabla de productos en factura
 CREATE TABLE productos_factura (

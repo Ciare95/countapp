@@ -13,8 +13,10 @@ def initialize_database():
             port=dbconfig['port']
         )
         cursor = conn.cursor()
-        with open('schema.sql', 'r') as f:
-            cursor.execute(f.read())
+        with open('schema_postgres.sql', 'rb') as f:
+            sql_bytes = f.read()
+        sql = sql_bytes.decode('utf-8', errors='ignore')
+        cursor.execute(sql)
         conn.commit()
         print("Database initialized successfully.")
     except Exception as e:
