@@ -7,7 +7,7 @@ services:
   - type: web
     name: countapp
     env: python
-    buildCommand: pip install -r requirements.txt && python init_db.py
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn run:app
 
     envVars:
