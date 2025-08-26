@@ -220,7 +220,7 @@ def editar():
 
 @fabricante_ingredientes_bp.route('/factura_ingredientes', methods=['GET'])
 def factura_ingredientes():
-    connection = db.get_connection()
+    connection = db.getconn()
     with connection.cursor() as cursor:
         cursor.execute("SELECT id, nombre FROM proveedores")
         proveedores = [{'id': row[0], 'nombre': row[1]} for row in cursor.fetchall()]
@@ -241,7 +241,7 @@ def crear_factura():
         id_proveedor = request.form['proveedor']
         total = request.form['total']
         
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             # Crear la factura en facturas_fabricacion
             query = """
@@ -263,7 +263,7 @@ def crear_factura():
 def agregar_ingrediente_factura():
     connection = None
     try:
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             # Verificar si la factura existe
             check_query = "SELECT id FROM facturas_fabricacion WHERE id = %s"
@@ -388,7 +388,7 @@ def ver_factura(id_factura):
 def editar_factura(factura_id):
     try:
         # Obtener la factura
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             # Obtener datos de la factura
             cursor.execute("""
@@ -440,7 +440,7 @@ def editar_factura(factura_id):
 @fabricante_ingredientes_bp.route('/eliminar_ingrediente_factura/<int:ingrediente_id>', methods=['POST'])
 def eliminar_ingrediente_factura(ingrediente_id):
     try:
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             # Eliminar el ingrediente de la factura
             query = "DELETE FROM ingredientes_factura WHERE id = %s"
@@ -460,7 +460,7 @@ def eliminar_ingrediente_factura(ingrediente_id):
 
 @fabricante_ingredientes_bp.route('/eliminar_factura/<int:factura_id>', methods=['GET'])
 def eliminar_factura(factura_id):
-    conexion = db.get_connection()
+    conexion = db.getconn()
     cursor = None
     try:
         cursor = conexion.cursor()
@@ -487,7 +487,7 @@ def buscar_ingrediente():
         if len(query) < 2:
             return jsonify([])
         
-        connection = db.get_connection()
+        connection = db.getconn()
         cursor = connection.cursor()  # Quitamos dictionary=True ya que no lo soporta
         
         sql = """
