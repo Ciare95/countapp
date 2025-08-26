@@ -17,16 +17,17 @@ class IngredienteFactura:
     def obtener_todos():
         query = "SELECT * FROM ingredientes_factura"
         connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query)
-            resultados = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
         connection.close()
         return [IngredienteFactura(**r) for r in resultados]
     
     @staticmethod
     def obtener_por_id(id_factura):
         connection = db.get_connection()
-        cursor = connection.cursor(dictionary=True)
+        cursor = connection.cursor()
         try:
             query = """
             SELECT 
@@ -44,7 +45,8 @@ class IngredienteFactura:
             WHERE f.id_factura = %s;
             """
             cursor.execute(query, (id_factura,))
-            ingredientes = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            ingredientes = [dict(zip(columns, row)) for row in cursor.fetchall()]
             return ingredientes
             
         except Exception as e:
@@ -62,5 +64,3 @@ class IngredienteFactura:
             cursor.execute(query, (nombre, cantidad, costo_unitario, id_factura,))
             connection.commit()
         connection.close()
-        
-   

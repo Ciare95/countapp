@@ -27,9 +27,10 @@ class IngredienteProducto:
         WHERE producto_id = %s
         """
         connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query, (producto_id,))
-            resultados = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
         connection.close()
         return [IngredienteProducto(**r) for r in resultados]
 

@@ -31,9 +31,10 @@ class ProductoFabricado:
     def obtener_todos():
         query = "SELECT * FROM productos_fabricados"
         connection = db.getconn()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query)
-            resultados = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
         db.putconn(connection)
 
         # Calcular ganancia neta y porcentaje de rentabilidad
@@ -61,9 +62,11 @@ class ProductoFabricado:
     def obtener_por_id(producto_id):
         query = "SELECT * FROM productos_fabricados WHERE id = %s"
         connection = db.getconn()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query, (producto_id,))
-            resultado = cursor.fetchone()
+            columns = [desc[0] for desc in cursor.description]
+            row = cursor.fetchone()
+            resultado = dict(zip(columns, row)) if row else None
         db.putconn(connection)
 
         if resultado:
@@ -137,9 +140,10 @@ class ProductoFabricado:
             WHERE ip.producto_id = %s
         """
         connection = db.getconn()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query, (self.id,))
-            resultados = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
         db.putconn(connection)
         
         

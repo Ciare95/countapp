@@ -16,11 +16,11 @@ class Ingrediente:
         INSERT INTO ingredientes (nombre, descripcion)
         VALUES (%s, %s)
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (nombre, descripcion))
             connection.commit()
-        connection.close()
+        db.putconn(connection)
 
 
     @staticmethod
@@ -30,43 +30,46 @@ class Ingrediente:
         SET nombre = %s, descripcion = %s
         WHERE id = %s
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (nombre, descripcion, id))
             connection.commit()
-        connection.close()
+        db.putconn(connection)
 
     
 
     @staticmethod
     def eliminar(id):
         query = "DELETE FROM ingredientes WHERE id = %s"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (id,))
             connection.commit()
-        connection.close()
+        db.putconn(connection)
         
 
     @staticmethod
     def obtener_todos():
         query = "SELECT * FROM ingredientes ORDER BY nombre ASC"
-        connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        connection = db.getconn()
+        with connection.cursor() as cursor:
             cursor.execute(query)
-            resultados = cursor.fetchall()
-        connection.close()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        db.putconn(connection)
         return [Ingrediente(**r) for r in resultados]
     
     
     @staticmethod
     def obtener_por_id(id):
         query = "SELECT * FROM ingredientes WHERE id = %s"
-        connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        connection = db.getconn()
+        with connection.cursor() as cursor:
             cursor.execute(query, (id,))
-            resultado = cursor.fetchone()
-        connection.close()
+            columns = [desc[0] for desc in cursor.description]
+            row = cursor.fetchone()
+            resultado = dict(zip(columns, row)) if row else None
+        db.putconn(connection)
         if resultado:
             return Ingrediente(**resultado)
         return None
@@ -78,10 +81,12 @@ class Ingrediente:
         SELECT id FROM ingredientes_producto
         WHERE producto_id = %s AND ingrediente_id = %s
         """
-        connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        connection = db.getconn()
+        with connection.cursor() as cursor:
             cursor.execute(query_verificar, (datos['producto_id'], datos['ingrediente_id']))
-            existente = cursor.fetchone()
+            columns = [desc[0] for desc in cursor.description]
+            row = cursor.fetchone()
+            existente = dict(zip(columns, row)) if row else None
 
         # Si existe, actualizar los datos
         if existente:
@@ -124,7 +129,7 @@ class Ingrediente:
                 ))
             connection.commit()
 
-        connection.close()
+        db.putconn(connection)
 
     @staticmethod
     def obtener_costo_total(producto_id):
@@ -133,9 +138,11 @@ class Ingrediente:
         FROM ingredientes_producto
         WHERE producto_id = %s
         """
-        connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        connection = db.getconn()
+        with connection.cursor() as cursor:
             cursor.execute(query, (producto_id,))
-            resultado = cursor.fetchone()
-        connection.close()
+            columns = [desc[0] for desc in cursor.description]
+            row = cursor.fetchone()
+            resultado = dict(zip(columns, row)) if row else None
+        db.putconn(connection)
         return resultado['costo_total'] if resultado else 0

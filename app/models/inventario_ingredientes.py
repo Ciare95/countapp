@@ -10,9 +10,10 @@ class InventarioIngrediente:
     def obtener_todos():
         query = "SELECT * FROM inventario_ingredientes"
         connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query)
-            resultados = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
         connection.close()
         return [InventarioIngrediente(**r) for r in resultados]
 

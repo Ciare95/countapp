@@ -15,9 +15,10 @@ class FacturaFabricacion:
     def obtener_todos():
         query = "SELECT * FROM facturas_fabricacion ORDER BY id DESC"
         connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query)
-            resultados = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
         connection.close()
         return [FacturaFabricacion(**r) for r in resultados]
 
@@ -42,9 +43,10 @@ class FacturaFabricacion:
         query += " ORDER BY f.id DESC"  # Ordenar por ID de forma descendente
         
         connection = db.get_connection()
-        with connection.cursor(dictionary=True) as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(query)
-            resultados = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
         connection.close()
 
         return [FacturaFabricacion(**r) for r in resultados]
@@ -89,9 +91,11 @@ class FacturaFabricacion:
             WHERE id = %s
             """
             connection = db.get_connection()
-            with connection.cursor(dictionary=True) as cursor:
+            with connection.cursor() as cursor:
                 cursor.execute(query, (id,))
-                factura = cursor.fetchone()
+                columns = [desc[0] for desc in cursor.description]
+                row = cursor.fetchone()
+                factura = dict(zip(columns, row)) if row else None
             connection.close()
             return factura
         

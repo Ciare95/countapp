@@ -24,9 +24,11 @@ class Negocio:
 
     @staticmethod
     def obtener_por_id(conexion, id):
-        cursor = conexion.cursor(dictionary=True)
+        cursor = conexion.cursor()
         cursor.execute("SELECT * FROM negocios WHERE id = %s", (id,))
-        negocio_data = cursor.fetchone()
+        columns = [desc[0] for desc in cursor.description]
+        row = cursor.fetchone()
+        negocio_data = dict(zip(columns, row)) if row else None
         cursor.close()
         if negocio_data:
             return Negocio(**negocio_data)
@@ -34,9 +36,10 @@ class Negocio:
 
     @staticmethod
     def obtener_todos(conexion):
-        cursor = conexion.cursor(dictionary=True)
+        cursor = conexion.cursor()
         cursor.execute("SELECT * FROM negocios")
-        negocios = [Negocio(**negocio) for negocio in cursor.fetchall()]
+        columns = [desc[0] for desc in cursor.description]
+        negocios = [Negocio(**dict(zip(columns, row))) for row in cursor.fetchall()]
         cursor.close()
         return negocios
 

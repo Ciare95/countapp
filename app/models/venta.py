@@ -148,7 +148,7 @@ class Venta:
         conexion = connection_pool.getconn()
         cursor = None
         try:
-            cursor = conexion.cursor(dictionary=True)
+            cursor = conexion.cursor()
             
             # Obtener facturas pendientes
             sql_pendientes = """
@@ -158,7 +158,8 @@ class Venta:
                 ORDER BY fecha_venta ASC
             """
             cursor.execute(sql_pendientes, (id_cliente,))
-            facturas_pendientes = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            facturas_pendientes = [dict(zip(columns, row)) for row in cursor.fetchall()]
 
             for factura in facturas_pendientes:
                 if monto <= 0:
