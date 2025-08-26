@@ -18,10 +18,11 @@ En `app/db.py`:
 connection_pool = pool.SimpleConnectionPool(
     2,                    # minconn (aumentado para producción)
     30,                   # maxconn (aumentado significativamente)
-    conn_string,
-    timeout=30            # timeout de 30 segundos
+    conn_string
 )
 ```
+
+**Nota**: `SimpleConnectionPool` no soporta el parámetro `timeout`. Para timeouts, se debe usar `ThreadedConnectionPool` o manejar los timeouts a nivel de aplicación.
 
 ### 2. Corrección de Doble Inicialización
 

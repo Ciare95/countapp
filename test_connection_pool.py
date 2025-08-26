@@ -66,7 +66,7 @@ def test_connection_pool():
         test_connections = []
         for i in range(35):  # Más que el máximo configurado (30)
             try:
-                conn = connection_pool.getconn(timeout=2)
+                conn = connection_pool.getconn()
                 test_connections.append(conn)
                 print(f"   Conexión de prueba {i+1} obtenida")
             except Exception as e:

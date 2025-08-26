@@ -77,8 +77,7 @@ def create_pool():
         connection_pool = pool.SimpleConnectionPool(
             2,                    # minconn (aumentado para producción)
             30,                   # maxconn (aumentado significativamente para producción)
-            conn_string,
-            timeout=30            # timeout de 30 segundos para obtener conexión
+            conn_string
         )
 
         logger.info("Pool de conexiones creado exitosamente")

@@ -24,7 +24,7 @@ def monitor_pool_status():
             # Prueba 1: Intentar obtener una conexión con timeout corto
             test_conn = None
             try:
-                test_conn = connection_pool.getconn(timeout=1)
+                test_conn = connection_pool.getconn()
                 pool_info['available'] = "Conexiones disponibles"
                 connection_pool.putconn(test_conn)
             except pool.PoolError as e:
@@ -72,7 +72,7 @@ def check_pool_health():
     
     # Check 1: ¿Se puede obtener una conexión?
     try:
-        conn = connection_pool.getconn(timeout=5)
+        conn = connection_pool.getconn()
         checks.append(("Obtención de conexión", "✓ OK"))
         connection_pool.putconn(conn)
     except Exception as e:
