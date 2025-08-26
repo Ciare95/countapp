@@ -25,9 +25,10 @@ def create_app():
     
     @login_manager.user_loader
     def load_user(user_id):
-        conexion = connection_pool.getconn()
+        conexion = None
         cursor = None
         try:
+            conexion = connection_pool.getconn()
             cursor = conexion.cursor()
             sql = "SELECT * FROM usuarios WHERE id = %s"
             cursor.execute(sql, (user_id,))
@@ -40,11 +41,20 @@ def create_app():
                     id_rol=resultado[3]
                 )
             return None
+        except Exception as e:
+            app.logger.error(f"Error en load_user: {e}")
+            return None
         finally:
-            if cursor:
-                cursor.close()
-            if 'conexion' in locals():
-                connection_pool.putconn(conexion)
+            try:
+                if cursor:
+                    cursor.close()
+            except:
+                pass
+            try:
+                if conexion:
+                    connection_pool.putconn(conexion)
+            except:
+                pass
             
     
     @app.before_request
@@ -84,19 +94,27 @@ def create_app():
     def index():
         if not current_user.is_authenticated:
             return redirect(url_for('usuario.login'))
+        connection = None
+        cursor = None
         try:
             connection = connection_pool.getconn()
             cursor = connection.cursor(cursor_factory=DictCursor)
             cursor.execute("SELECT id, nombre FROM categorias")
             categorias = cursor.fetchall()
         except Exception as e:
-            print(f"Error al obtener las categorías: {e}")
+            app.logger.error(f"Error al obtener las categorías: {e}")
             categorias = []
         finally:
-            if 'cursor' in locals():
-                cursor.close()
-            if 'connection' in locals():
-                connection_pool.putconn(connection)
+            try:
+                if cursor:
+                    cursor.close()
+            except:
+                pass
+            try:
+                if connection:
+                    connection_pool.putconn(connection)
+            except:
+                pass
         return render_template("index.html", categorias=categorias)
 
     return app

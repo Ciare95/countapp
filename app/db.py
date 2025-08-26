@@ -75,9 +75,10 @@ def create_pool():
             conn_string = f"host={dbconfig['host']} user={dbconfig['user']} password={dbconfig['password']} dbname={dbconfig['database']} port={dbconfig['port']} client_encoding=utf8"
 
         connection_pool = pool.SimpleConnectionPool(
-            1,                    # minconn
-            15,                   # maxconn
-            conn_string
+            2,                    # minconn (aumentado para producción)
+            30,                   # maxconn (aumentado significativamente para producción)
+            conn_string,
+            timeout=30            # timeout de 30 segundos para obtener conexión
         )
 
         logger.info("Pool de conexiones creado exitosamente")
