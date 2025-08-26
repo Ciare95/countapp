@@ -9,7 +9,7 @@ class InventarioIngrediente:
     @staticmethod
     def obtener_todos():
         query = "SELECT * FROM inventario_ingredientes"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query)
             columns = [desc[0] for desc in cursor.description]
@@ -24,7 +24,7 @@ class InventarioIngrediente:
         SET cantidad = %s
         WHERE ingrediente_id = %s
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (cantidad, ingrediente_id))
             connection.commit()

@@ -7,7 +7,7 @@ negocio_bp = Blueprint('negocio', __name__)
 @negocio_bp.route('/listar')
 def listar():
     try:
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         negocios = Negocio.obtener_todos(conexion)
         return render_template('negocios/listar.html', negocios=negocios)
     except Exception as e:
@@ -21,8 +21,8 @@ def listar():
 @negocio_bp.route('/crear', methods=['POST'])
 def crear():
     try:
-        conexion = connection_pool.get_connection()
-        datos = request.get_json()  # Cambiar a get_json() si estás enviando JSON
+        conexion = connection_pool.getconn()
+        datos = request.get_json()  # Cambiar to get_json() if you're sending JSON
         nuevo_negocio = Negocio(
             nombre=datos['nombre'],
             nit=datos['nit'],
@@ -44,7 +44,7 @@ def crear():
 @negocio_bp.route('/actualizar/<int:id>', methods=['PUT'])
 def actualizar(id):
     try:
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         datos = request.json
         negocio = Negocio(
             id=id,
@@ -68,7 +68,7 @@ def actualizar(id):
 @negocio_bp.route('/eliminar/<int:id>', methods=['DELETE'])
 def eliminar(id):
     try:
-        conexion = connection_pool.get_connection()
+        conexion = connection_pool.getconn()
         Negocio.eliminar(conexion, id)
         flash("Negocio eliminado exitosamente.", "success")
         return jsonify({"success": True, "message": "Negocio eliminado exitosamente"})

@@ -14,7 +14,7 @@ class FacturaFabricacion:
     @staticmethod
     def obtener_todos():
         query = "SELECT * FROM facturas_fabricacion ORDER BY id DESC"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query)
             columns = [desc[0] for desc in cursor.description]
@@ -42,7 +42,7 @@ class FacturaFabricacion:
 
         query += " ORDER BY f.id DESC"  # Ordenar por ID de forma descendente
         
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query)
             columns = [desc[0] for desc in cursor.description]
@@ -58,7 +58,7 @@ class FacturaFabricacion:
         INSERT INTO facturas_fabricacion (numero_factura, id_proveedor, fecha, total)
         VALUES (%s, %s, %s, %s)
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (numero_factura, id_proveedor, fecha, total))
             connection.commit()
@@ -73,7 +73,7 @@ class FacturaFabricacion:
             SET numero_factura = %s, id_proveedor = %s, total = %s
             WHERE id = %s
             """
-            connection = db.get_connection()
+            connection = db.getconn()
             with connection.cursor() as cursor:
                 cursor.execute(query, (numero_factura,id_proveedor, total, id))
                 connection.commit()
@@ -90,7 +90,7 @@ class FacturaFabricacion:
             SELECT * FROM facturas_fabricacion 
             WHERE id = %s
             """
-            connection = db.get_connection()
+            connection = db.getconn()
             with connection.cursor() as cursor:
                 cursor.execute(query, (id,))
                 columns = [desc[0] for desc in cursor.description]

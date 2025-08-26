@@ -42,7 +42,7 @@ def actualizar_costo_total():
             costo_unitario = ingrediente['costoUnitario']
             total_costo += float(cantidad) * float(costo_unitario)
 
-        conn = db.get_connection()
+        conn = db.getconn()
         cursor = conn.cursor()
 
         update_query = """
@@ -73,7 +73,7 @@ def buscar_ingrediente():
     
     # Consulta de ingredientes filtrados por el término
     query = "SELECT * FROM ingredientes WHERE nombre LIKE %s LIMIT 10"
-    connection = db.get_connection()
+    connection = db.getconn()
     with connection.cursor(dictionary=True) as cursor:
         cursor.execute(query, (f"%{termino}%",))
         resultados = cursor.fetchall()

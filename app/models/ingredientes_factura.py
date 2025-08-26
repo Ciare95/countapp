@@ -16,7 +16,7 @@ class IngredienteFactura:
     @staticmethod
     def obtener_todos():
         query = "SELECT * FROM ingredientes_factura"
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query)
             columns = [desc[0] for desc in cursor.description]
@@ -26,7 +26,7 @@ class IngredienteFactura:
     
     @staticmethod
     def obtener_por_id(id_factura):
-        connection = db.get_connection()
+        connection = db.getconn()
         cursor = connection.cursor()
         try:
             query = """
@@ -59,7 +59,7 @@ class IngredienteFactura:
         INSERT INTO ingredientes_factura (nombre, cantidad, costo_unitario, id_factura)
         VALUES (%s, %s, %s, %s)
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (nombre, cantidad, costo_unitario, id_factura,))
             connection.commit()

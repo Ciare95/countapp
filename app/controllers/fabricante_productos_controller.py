@@ -121,7 +121,7 @@ def guardar_producto():
             ingrediente['unidad_original']
         )
         
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, values)
         connection.commit()
@@ -183,7 +183,7 @@ def ver_producto_fabricado(producto_id):
 @fabricante_productos_bp.route('/listar', methods=['GET'])
 def listar_productos():
     try:
-        conexion = db.get_connection()
+        conexion = db.getconn()
         cursor = conexion.cursor()
         
         termino_busqueda = request.args.get('q', '').strip()

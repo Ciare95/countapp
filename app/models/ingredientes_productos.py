@@ -26,7 +26,7 @@ class IngredienteProducto:
         SELECT * FROM ingredientes_producto
         WHERE producto_id = %s
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (producto_id,))
             columns = [desc[0] for desc in cursor.description]
@@ -47,7 +47,7 @@ class IngredienteProducto:
             unidad_costo = VALUES(unidad_costo)
         """
         
-        connection = db.get_connection()
+        connection = db.getconn()
         try:
             with connection.cursor() as cursor:
                 cursor.execute(query, (
@@ -72,7 +72,7 @@ class IngredienteProducto:
         SET cantidad_por_unidad = %s
         WHERE producto_id = %s AND ingrediente_id = %s
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (cantidad_por_unidad, producto_id, ingrediente_id))
             connection.commit()
@@ -80,12 +80,12 @@ class IngredienteProducto:
 
     @staticmethod
     def eliminar_ingrediente(producto_id, ingrediente_id):
-        # Eliminar un ingrediente de un producto
+        # Eliminar an ingrediente from a product
         query = """
         DELETE FROM ingredientes_producto
         WHERE producto_id = %s AND ingrediente_id = %s
         """
-        connection = db.get_connection()
+        connection = db.getconn()
         with connection.cursor() as cursor:
             cursor.execute(query, (producto_id, ingrediente_id))
             connection.commit()
@@ -116,7 +116,7 @@ class IngredienteProducto:
         except (decimal.InvalidOperation, ValueError) as e:
             raise ValueError(f"Error en la conversión de tipos: {str(e)}")
 
-        connection = db.get_connection()
+        connection = db.getconn()
         try:
             with connection.cursor() as cursor:
                 cursor.execute(query, (
