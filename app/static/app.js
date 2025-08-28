@@ -56,13 +56,13 @@ function buscarProducto(termino) {
         .then(data => {
             const suggestions = document.getElementById('product-suggestions');
             suggestions.innerHTML = '';
-            data.forEach(producto => {
-                const item = document.createElement('li');
-                item.classList.add('list-group-item');
-                item.textContent = `${producto.nombre} - $${producto.precio}`;
-                item.onclick = () => seleccionarProducto(producto);
-                suggestions.appendChild(item);
-            });
+                data.forEach(producto => {
+                    const item = document.createElement('li');
+                    item.classList.add('list-group-item');
+                    item.textContent = `${producto.nombre.toUpperCase()} - $${producto.precio}`;
+                    item.onclick = () => seleccionarProducto(producto);
+                    suggestions.appendChild(item);
+                });
             suggestions.style.display = 'block';
         })
         .catch(error => {
