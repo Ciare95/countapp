@@ -120,7 +120,7 @@
 
                         <div class="mb-3">
                             <label for="nombre" class="form-label">Nombre del <span class="tipo-item">Producto</span></label>
-                            <input type="text" class="form-control" name="nombre" id="crear-nombre" required>
+                            <input type="text" class="form-control" name="nombre" id="crear-nombre" required oninput="this.value = this.value.toUpperCase()" style="text-transform: uppercase;">
                         </div>
 
                         <div class="mb-3">
@@ -193,7 +193,7 @@
                         <input type="hidden" name="id" id="editar-id">
                         <div class="mb-3">
                             <label for="nombre" class="form-label">Nombre del Producto</label>
-                            <input type="text" class="form-control" name="nombre" id="editar-nombre" required>
+                            <input type="text" class="form-control" name="nombre" id="editar-nombre" required oninput="this.value = this.value.toUpperCase()" style="text-transform: uppercase;">
                         </div>
 
                         <div class="mb-3">
