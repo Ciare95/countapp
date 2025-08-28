@@ -139,7 +139,7 @@ def buscar_producto(termino):
         for row in productos:
             productos_list.append({
                 'id': row[0],
-                'nombre': row[1],
+                'nombre': row[1].upper() if row[1] else '',
                 'precio': float(row[2]) if row[2] is not None else 0,
                 'precio_compra': float(row[3]) if row[3] is not None else 0
             })
