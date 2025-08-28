@@ -221,13 +221,16 @@ def editar():
 @fabricante_ingredientes_bp.route('/factura_ingredientes', methods=['GET'])
 def factura_ingredientes():
     connection = db.getconn()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT id, nombre FROM proveedores")
-        proveedores = [{'id': row[0], 'nombre': row[1]} for row in cursor.fetchall()]
-        
-        cursor.execute("SELECT id, nombre FROM ingredientes")
-        ingredientes = [{'id': row[0], 'nombre': row[1]} for row in cursor.fetchall()]
-    connection.close()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, nombre FROM proveedores")
+            proveedores = [{'id': row[0], 'nombre': row[1]} for row in cursor.fetchall()]
+            
+            cursor.execute("SELECT id, nombre FROM ingredientes")
+            ingredientes = [{'id': row[0], 'nombre': row[1]} for row in cursor.fetchall()]
+    finally:
+        if connection and connection.closed == 0:
+            db.putconn(connection)
     
     return render_template('fabricante/factura_ingredientes.html', 
                          proveedores=proveedores,
@@ -242,17 +245,20 @@ def crear_factura():
         total = request.form['total']
         
         connection = db.getconn()
-        with connection.cursor() as cursor:
-            # Crear la factura en facturas_fabricacion
-            query = """
-            INSERT INTO facturas_fabricacion (numero_factura, id_proveedor, total)
-            VALUES (%s, %s, %s)
-            """
-            cursor.execute(query, (numero_factura, id_proveedor, total))
-            id_factura = cursor.lastrowid
-            
-            connection.commit()
-        connection.close()
+        try:
+            with connection.cursor() as cursor:
+                # Crear la factura en facturas_fabricacion
+                query = """
+                INSERT INTO facturas_fabricacion (numero_factura, id_proveedor, total)
+                VALUES (%s, %s, %s)
+                """
+                cursor.execute(query, (numero_factura, id_proveedor, total))
+                id_factura = cursor.lastrowid
+                
+                connection.commit()
+        finally:
+            if connection and connection.closed == 0:
+                db.putconn(connection)
         
         return jsonify({'success': True, 'id_factura': id_factura})
     except Exception as e:
@@ -342,8 +348,8 @@ def agregar_ingrediente_factura():
             connection.rollback()
         return jsonify({'success': False, 'error': str(e)})
     finally:
-        if connection:
-            connection.close()
+        if connection and connection.closed == 0:
+            db.putconn(connection)
 
 
 @fabricante_ingredientes_bp.route('/mostrar_facturas')
@@ -434,7 +440,8 @@ def editar_factura(factura_id):
         flash(f'Error al cargar la factura: {str(e)}', 'error')
         return redirect(url_for('fabricante_ingredientes.mostrar_facturas'))
     finally:
-        connection.close()
+        if 'connection' in locals() and connection.closed == 0:
+            db.putconn(connection)
     
 
 @fabricante_ingredientes_bp.route('/eliminar_ingrediente_factura/<int:ingrediente_id>', methods=['POST'])
@@ -454,8 +461,8 @@ def eliminar_ingrediente_factura(ingrediente_id):
             connection.rollback()
         return jsonify({'success': False, 'error': str(e)})
     finally:
-        if connection:
-            connection.close()
+        if 'connection' in locals() and connection.closed == 0:
+            db.putconn(connection)
             
 
 @fabricante_ingredientes_bp.route('/eliminar_factura/<int:factura_id>', methods=['GET'])
@@ -475,7 +482,8 @@ def eliminar_factura(factura_id):
     finally:
         if cursor:
             cursor.close()
-        conexion.close()
+        if 'conexion' in locals() and conexion.closed == 0:
+            db.putconn(conexion)
 
     return redirect(url_for('fabricante_ingredientes.mostrar_facturas'))
 
@@ -503,8 +511,10 @@ def buscar_ingrediente():
         # Convertimos las tuplas a diccionarios
         resultados = [{'id': fila[0], 'nombre': fila[1]} for fila in filas]
         
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if 'connection' in locals() and connection.closed == 0:
+            db.putconn(connection)
         
         return jsonify(resultados)
         

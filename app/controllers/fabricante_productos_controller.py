@@ -122,10 +122,13 @@ def guardar_producto():
         )
         
         connection = db.getconn()
-        with connection.cursor() as cursor:
-            cursor.execute(query, values)
-        connection.commit()
-        connection.close()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query, values)
+            connection.commit()
+        finally:
+            if connection and connection.closed == 0:
+                db.putconn(connection)
     
     return jsonify({'success': True})
 
@@ -228,5 +231,7 @@ def listar_productos():
         return render_template('fabricante/index.html', productos=productos)
     
     finally:
-        cursor.close()
-        conexion.close()
+        if cursor:
+            cursor.close()
+        if 'conexion' in locals() and conexion.closed == 0:
+            db.putconn(conexion)

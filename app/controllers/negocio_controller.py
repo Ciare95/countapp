@@ -14,8 +14,8 @@ def listar():
         flash("Error al obtener la lista de negocios. Inténtalo nuevamente.", "danger")
         return redirect(url_for('negocio.listar')), 500
     finally:
-        if 'conexion' in locals() and conexion.is_connected():
-            conexion.close()
+        if 'conexion' in locals() and conexion.closed == 0:
+            connection_pool.putconn(conexion)
 
 
 @negocio_bp.route('/crear', methods=['POST'])
@@ -37,8 +37,8 @@ def crear():
         flash(f"Error al crear el negocio: {str(e)}", "danger")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        if 'conexion' in locals() and conexion.is_connected():
-            conexion.close()
+        if 'conexion' in locals() and conexion.closed == 0:
+            connection_pool.putconn(conexion)
 
 
 @negocio_bp.route('/actualizar/<int:id>', methods=['PUT'])
@@ -61,8 +61,8 @@ def actualizar(id):
         flash(f"Error al actualizar el negocio: {str(e)}", "danger")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        if 'conexion' in locals() and conexion.is_connected():
-            conexion.close()
+        if 'conexion' in locals() and conexion.closed == 0:
+            connection_pool.putconn(conexion)
 
 
 @negocio_bp.route('/eliminar/<int:id>', methods=['DELETE'])
@@ -76,5 +76,5 @@ def eliminar(id):
         flash(f"Error al eliminar el negocio: {str(e)}", "danger")
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        if 'conexion' in locals() and conexion.is_connected():
-            conexion.close()
+        if 'conexion' in locals() and conexion.closed == 0:
+            connection_pool.putconn(conexion)
