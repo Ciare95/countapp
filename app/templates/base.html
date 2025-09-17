@@ -125,13 +125,15 @@
                     </a>
                 </div>
                 <a href="/historial/historial_general" class="btn text-white hover-effect">Historial de ventas</a>
+                {% if current_user.id_rol == 1 %}
                 <a href="/productos/productos" class="btn text-white hover-effect">Productos</a>
                 <a href="/usuarios" class="btn text-white hover-effect">Usuarios</a>
-                <a href="/categorias" class="btn text-white hover-effect">Categorías</a>
-                <a href="/clientes" class="btn text-white hover-effect">Clientes</a>
                 <a href="/informes/ingresos_egresos" class="btn text-white hover-effect">Informe de Ventas</a>
                 <a href="/informes/registro_ingresos" class="btn text-white hover-effect">Distribución</a>
                 <a href="/fabricante_productos/fabricante" class="btn text-white hover-effect">Fabricante</a>
+                {% endif %}
+                <a href="/categorias" class="btn text-white hover-effect">Categorías</a>
+                <a href="/clientes" class="btn text-white hover-effect">Clientes</a>
                 <a href="{{ url_for('usuario.logout') }}" class="btn text-white hover-effect">Cerrar Sesión</a>
             </div>
         </div>
