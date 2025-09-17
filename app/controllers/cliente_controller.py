@@ -28,7 +28,6 @@ def listar_clientes():
 
 @cliente_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
-@administrador_requerido  # Solo los administradores pueden acceder a esta ruta
 def crear_cliente():
     if request.method == 'POST':
         nombre = request.form['nombre']
